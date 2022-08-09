@@ -45,10 +45,12 @@ Files used in prototyping:
 [Manuscript Link](https://pubmed.ncbi.nlm.nih.gov/33393903/)
 [Download Data Link](https://singlecell.broadinstitute.org/single_cell/study/SCP1159/a-cell-atlas-of-the-chick-retina-based-on-single-cell-transcriptomics#study-download)
 [Data Summary Link](https://singlecell.broadinstitute.org/single_cell/study/SCP1159/a-cell-atlas-of-the-chick-retina-based-on-single-cell-transcriptomics#study-summary)
+[GEO Data Link](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE159107)
 
 Files used in prototyping:
-- `Chick_retina_atlas_expression_matrix.csv`
-- `Chick_retina_atlas_meta.csv`
+- `GSE159107_E12chick_count.matrix.csv.gz`
+- `GSE159107_E16chick_count.matrix.csv.gz`
+- `GSE159107_E18chick_count.matrix.csv.gz`
 
 ## GEO Datasets
 ### Mouse Developmental Retina
@@ -67,4 +69,5 @@ Files used in prototyping:
 Files used in prototyping:
 - `GSE122680_RAW.tar`
 
-
+NOTE that after untar'ing this file, it contains several individual sequence
+files, which are used separately for corpus generation 
