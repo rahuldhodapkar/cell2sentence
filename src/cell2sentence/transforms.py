@@ -15,9 +15,9 @@ import sys
 from sklearn import model_selection
 
 def train_test_validation_split(sentences, 
-                                train_pct=0.6,
-                                test_pct=0.2,
-                                val_pct=0.2,
+                                train_pct=0.8,
+                                test_pct=0.1,
+                                val_pct=0.1,
                                 random_state=42):
     """
     Create train, test, and validation splits of the data given the supplied

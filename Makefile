@@ -9,4 +9,4 @@
 
 install:
 	echo "Installing locally using setup.py"
-	pip install -e .
+	python -m pip install -e .

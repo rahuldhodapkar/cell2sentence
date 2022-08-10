@@ -60,7 +60,7 @@ def read_mtx_sample(s):
     adata = sc.read_10x_mtx(s, prefix=prefix)
     return(adata)
 
-read_funcs: {
+read_funcs = {
     'human': read_csv_sample,
     'chick': read_csv_sample,
     'mouse': read_mtx_sample,
