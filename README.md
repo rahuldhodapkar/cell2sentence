@@ -62,6 +62,33 @@ Files used in prototyping:
 - `GSE118614_barcodes.tsv.gz`
 - `GSE118614_genes.tsv.gz`
 
+NOTE that the genes and barcodes files available were not in the correct
+formats, and needed to be cleaned with the following commands.  First move
+original files,
+
+     mv GSE118614_genes.tsv GSE118614_genes.tsv.bak
+     mv GSE118614_barcodes.tsv GSE118614_barcodes.tsv.bak
+     mv GSE118614_matrix.mtx GSE118614_matrix.mtx.bak
+
+And then clean:
+
+     tail -n +2 GSE118614_genes.tsv.bak | cut -w -f2-3 | sed s/\"//g > GSE118614_genes.tsv
+     tail -n +2 GSE118614_barcodes.tsv.bak | cut -w -f2 | sed s/\"//g > GSE118614_barcodes.tsv
+
+Additionally, the `mtx` file has been saved in the incorrect format, so
+we will need to load it separately, transpose it, and save it back.
+
+    #!/usr/bin/env python
+    from scipy.io import mmread, mmwrite
+    X = mmread('GSE118614_matrix.mtx.bak')
+    mmwrite('GSE118614_matrix.mtx', X.T)
+
+This mtx file is quite large, and so this will take some time.
+
+
+The `.bak` files can be removed or can remain within the directory. They
+will be ignored by `scanpy.read_10x_mtx`.  The `mtx`
+
 ### Zebrafish Developmental Retina
 [Manuscript Link](https://pubmed.ncbi.nlm.nih.gov/32467236/)
 [Download Data Link](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE122680)
