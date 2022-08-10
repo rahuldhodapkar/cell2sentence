@@ -4,14 +4,10 @@
 # Tutorial for loading data and generating cell sentences.
 #
 
-import numpy as np
 import cell2sentence as cs
 import scanpy as sc
-import pandas as pd
 
-from tqdm import tqdm
 import os
-
 os.makedirs('./calc', exist_ok=True)
 
 # standard cell2sentence workflow:
@@ -30,3 +26,11 @@ chick_vocab = cs.transforms.generate_vocabulary(chick_adata)
 train_chick, test_chick, val_chick = (
     cs.transforms.train_test_validation_split(chick_sentences))
 
+# (5) format for downstream analysis, for example cross species single-cell
+#     integration using XLM
+cs.integrations.xlm_prepare_outpath(
+    outpath='./calc/xlm_outpath', species_tag='chick',
+    vocab=chick_vocab,
+    train_sentences=train_chick,
+    test_sentences=test_chick,
+    val_sentences=val_chick)
