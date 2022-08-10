@@ -6,20 +6,27 @@
 
 import numpy as np
 import cell2sentence as cs
+import scanpy as sc
+import pandas as pd
 
-chick_values = cs.transforms.read_gbc_csv(
-    './data/Chick_retina_atlas_expression_matrix.csv')
-chick_values['gene_names'] = np.array(['chick_' + x for x in chick_values['gene_names']])
-chick_sentences = cs.transforms.trans_expression_matrix(**chick_values)
-chick_vocab = cs.transforms.create_vocabulary_dict(**chick_values)
+from tqdm import tqdm
+import os
 
+os.makedirs('./calc', exist_ok=True)
 
-human_values = cs.transforms.read_gbc_csv(
-    './data/Human_retina_combined_all_expression_matrix.csv')
-human_values['gene_names'] = np.array(['human_' + x for x in human_values['gene_names']] )
+# standard cell2sentence workflow:
 
-human_sentences = cs.transforms.trans_expression_matrix(**human_values)
-human_vocab = cs.transforms.create_vocabulary_dict(**human_values)
+# (1) load count matrix into anndata object depending on input format.
+chick_adata = sc.read_csv('./data/chick/GSE159107_E12chick_count.matrix.csv.gz')
+chick_adata = chick_adata.T # ensure that obs = cells, vars = genes.
 
+# (2) generate sentences from anndata object.
+chick_sentences = cs.transforms.generate_sentences(chick_adata)
 
-os.path.getsize('./data/Chick_retina_atlas_expression_matrix.csv')
+# (3) use anndata object to build vocabulary dictionary.
+chick_vocab = cs.transforms.generate_vocabulary(chick_adata)
+
+# (4) split sentences into train, test, and validation segments.
+train_chick, test_chick, val_chick = (
+    cs.transforms.train_test_validation_split(chick_sentences))
+
