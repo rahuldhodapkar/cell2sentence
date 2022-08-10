@@ -3,6 +3,7 @@
 
 # project specific excludes
 data
+calc
 
 ###########################################################
 ## BEGIN PYTHON BOILERPLATE GITIGNORE
