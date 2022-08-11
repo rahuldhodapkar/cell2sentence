@@ -67,7 +67,7 @@ def generate_vocabulary(adata):
                 len(adata.var), len(adata.obs)), file=sys.stderr)
 
     vocabulary = {}
-    gene_sums = np.sum(adata.X > 0, axis=0)
+    gene_sums = np.ravel(np.sum(adata.X > 0, axis=0))
 
     for i in range(len(adata.var_names)):
         vocabulary[adata.var_names[i]] = gene_sums[i]

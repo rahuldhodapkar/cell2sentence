@@ -50,13 +50,12 @@ def read_mtx_sample(s):
     be unzipped prior to reading, while v3 10x matrix files must be zipped
     and have the *.gz extension.
     """
-    mtx_file =  list(Path(s).glob('*.mtx.gz'))
+    mtx_file =  list(Path(s).glob('*.mtx'))
     if (len(mtx_file) != 1):
         print("ERROR: improperly formatted 10x directory ({})".format(s))
         sys.exit(1)
-    result = re.match(r'(\w*)matrix.mtx.gz', mtx_file[0].name)
+    result = re.match(r'(\w*)matrix.mtx', mtx_file[0].name)
     prefix = result.group(1)
-
     adata = sc.read_10x_mtx(s, prefix=prefix)
     return(adata)
 
