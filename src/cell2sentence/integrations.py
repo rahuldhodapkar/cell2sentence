@@ -21,6 +21,9 @@ def xlm_prepare_outpath(outpath, species_tag,
     values. They will not conflict so long as species_tags are appropriately
     assigned.
 
+    Note that XLM requires a dictionary sorted in order of increasing
+    frequency of occurence.
+
     Arguments:
         outpath: directory to write files to. Will create this directory
                  if it does not already exist.
@@ -42,7 +45,9 @@ def xlm_prepare_outpath(outpath, species_tag,
     print("INFO: Writing Vocabulary File", file=sys.stderr)
     vocab_fn = "{}/vocab_{}".format(outpath, species_tag)
     with open(vocab_fn, 'w') as f:
-        for k in tqdm(vocab.keys()):
+        for k in tqdm(sorted(vocab, key=vocab.get)):
+            if vocab[k] == 0:
+                continue
             print("{} {}".format(k, vocab[k]), file=f)
 
     print("INFO: Writing Training Sentences", file=sys.stderr)
