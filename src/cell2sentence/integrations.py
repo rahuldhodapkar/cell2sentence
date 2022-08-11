@@ -45,7 +45,7 @@ def xlm_prepare_outpath(outpath, species_tag,
     print("INFO: Writing Vocabulary File", file=sys.stderr)
     vocab_fn = "{}/vocab_{}".format(outpath, species_tag)
     with open(vocab_fn, 'w') as f:
-        for k in tqdm(sorted(vocab, key=vocab.get)):
+        for k in tqdm(sorted(vocab, key=vocab.get, reverse=True)):
             if vocab[k] == 0:
                 continue
             print("{} {}".format(k, vocab[k]), file=f)

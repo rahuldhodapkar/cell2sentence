@@ -88,6 +88,10 @@ def generate_sentences(adata, delimiter=" "):
     Return:
         a `numpy.ndarray` of sentences, split by delimiter.
     """
+    if np.any([delimiter in x for x in adata.var_names]):
+        raise ValueError('anndata var_names cannot contain sentence delimiter "{}", please re-format and try again'.format(
+                delimiter))
+
     if (len(adata.var) > len(adata.obs)):
         print("WARN: more variables ({}) than observations ({}), did you mean to transpose the object (e.g. adata.T)?".format(
                 len(adata.var), len(adata.obs)), file=sys.stderr)

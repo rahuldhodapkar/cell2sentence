@@ -12,6 +12,7 @@ import sys
 import os
 from pathlib import Path
 import re
+import pandas as pd
 
 import anndata
 import cell2sentence as cs
@@ -59,6 +60,16 @@ def read_mtx_sample(s):
     adata = sc.read_10x_mtx(s, prefix=prefix)
     return(adata)
 
+
+def clean_adata(adata):
+    """
+    Ensure that anndata object `adata` is correctly formatted for use by
+    cell2sentence.
+    """
+    adata.var_names = pd.Index([x.replace(' ', '_') for x in adata.var_names],dtype=object)
+    return(adata)
+
+
 read_funcs = {
     'human': read_csv_sample,
     'chick': read_csv_sample,
@@ -70,7 +81,7 @@ for tag in species_tags:
     print("INFO: loading data for species [{}]".format(tag))
     adata_objs = []
     for s in samples_to_process[tag]:
-        adata = read_funcs[tag](s)
+        adata = clean_adata(read_funcs[tag](s))
         adata_objs.append(adata)
     print("INFO: joining data for species [{}]".format(tag))
     adata_combined = anndata.concat(adata_objs, axis=0)
