@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import re
 import pandas as pd
+from tqdm import tqdm
 
 import anndata
 import cell2sentence as cs
@@ -61,12 +62,12 @@ def read_mtx_sample(s):
     return(adata)
 
 
-def clean_adata(adata):
+def clean_adata(adata, tag):
     """
     Ensure that anndata object `adata` is correctly formatted for use by
     cell2sentence.
     """
-    adata.var_names = pd.Index([x.replace(' ', '_') for x in adata.var_names],dtype=object)
+    adata.var_names = pd.Index([tag + '_' + x.replace(' ', '_') for x in adata.var_names],dtype=object)
     return(adata)
 
 
@@ -77,11 +78,13 @@ read_funcs = {
     'zebrafish': read_mtx_sample
 }
 
+merged_vocab = {} # a single vocabulary file is required for XLM
+
 for tag in species_tags:
     print("INFO: loading data for species [{}]".format(tag))
     adata_objs = []
     for s in samples_to_process[tag]:
-        adata = clean_adata(read_funcs[tag](s))
+        adata = clean_adata(adata=read_funcs[tag](s), tag=tag)
         adata_objs.append(adata)
     print("INFO: joining data for species [{}]".format(tag))
     adata_combined = anndata.concat(adata_objs, axis=0)
@@ -89,6 +92,7 @@ for tag in species_tags:
     sentences = cs.transforms.generate_sentences(adata_combined)
     print("INFO: building vocabulary for species [{}]".format(tag))
     vocab = cs.transforms.generate_vocabulary(adata_combined)
+    merged_vocab.update(vocab)
     print("INFO: formatting for XLM integration for species [{}]".format(tag))
     train, test, val = cs.transforms.train_test_validation_split(
         sentences, train_pct=0.8, test_pct=0.1, val_pct=0.1)
@@ -99,5 +103,13 @@ for tag in species_tags:
         test_sentences=test,
         val_sentences=val)
     print("INFO: species [{}] complete".format(tag))
+
+print("INFO: saving merged vocabulary file")
+with open('{}/vocab'.format(outpath), 'w') as f:
+    for k in tqdm(sorted(merged_vocab, key=merged_vocab.get, reverse=True)):
+        if merged_vocab[k] == 0:
+            continue
+        print("{} {}".format(k, merged_vocab[k]), file=f)
+
 
 print("All done!")
