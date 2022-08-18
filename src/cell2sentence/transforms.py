@@ -10,9 +10,14 @@
 from tqdm import tqdm
 import os
 import numpy as np
+import pandas as pd
 from scipy import sparse
 import sys
 from sklearn import model_selection
+from collections import OrderedDict
+from itertools import chain
+
+from .csdata import CSData
 
 def train_test_validation_split(sentences, 
                                 train_pct=0.8,
@@ -50,6 +55,7 @@ def train_test_validation_split(sentences,
 
     return (sentences[X_train], sentences[X_test], sentences[X_val])
 
+
 def generate_vocabulary(adata):
     """
     Create a vocabulary dictionary, where each key represents a single gene
@@ -66,7 +72,7 @@ def generate_vocabulary(adata):
         print("WARN: more variables ({}) than observations ({}), did you mean to transpose the object (e.g. adata.T)?".format(
                 len(adata.var), len(adata.obs)), file=sys.stderr)
 
-    vocabulary = {}
+    vocabulary = OrderedDict()
     gene_sums = np.ravel(np.sum(adata.X > 0, axis=0))
 
     for i in range(len(adata.var_names)):
@@ -103,7 +109,72 @@ def generate_sentences(adata, delimiter=" "):
         cols = mat.indices[mat.indptr[i]:mat.indptr[i+1]]
         vals = mat.data[mat.indptr[i]:mat.indptr[i+1]]
 
-        words = adata.var_names[cols[np.argsort(-vals)]]
-        sentences.append(delimiter.join(words))
+        sentences.append(cols[np.argsort(-vals)])
 
     return(np.array(sentences, dtype=object))
+
+
+def csdata_from_adata(adata):
+    """
+    Generate a CSData object from an AnnData object.
+
+    Arguments:
+        adata: an AnnData object to generate cell sentences from. Expects that
+               `obs` correspond to cells and `vars` correspond to genes.
+    Return:
+        a CSData object containing a vocabulary, sentences, and associated name data.
+    """
+    return CSData(
+        vocab = generate_vocabulary(adata),
+        sentences = generate_sentences(adata),
+        cell_names = adata.obs_names,
+        feature_names = adata.var_names
+    )
+
+
+def merge_csdata(csdata_lst):
+    """
+    Merge two csdata objects, assumes that features with the same name are the
+    same feature and will collapse them accordingly.
+
+    Arguments:
+        csdata_lst: list of csdata objects to merge
+    Return:
+        a merged CSData object.
+    """
+    merged_features = set(chain.from_iterable([x.vocab.keys() for x in csdata_lst]))
+    merged_vocab = OrderedDict()
+
+    for f in merged_features:
+        merged_vocab[f] = 0
+        for csdata in csdata_lst:
+            merged_vocab[f] += csdata.vocab[f] if f in csdata.vocab else 0
+
+    feat_to_merged_enc = {k:i for i,k in enumerate(merged_vocab.keys())}
+    
+    enc_maps = []
+    for csdata in csdata_lst:
+        enc_maps.append(
+            {i:feat_to_merged_enc[k] for i,k in enumerate(csdata.vocab.keys())}
+        )
+
+    merged_sentence_data = []
+    for i, csdata in enumerate(csdata_lst):
+        for j in range(len(csdata.sentences)):
+            for ix in range(len(csdata.sentences[j])):
+                csdata.sentences[j][ix] = enc_maps[i][csdata.sentences[j][ix]]
+        merged_sentence_data.append(csdata.sentences)
+
+    # update sentence data
+    merged_sentences = np.concatenate(merged_sentence_data, axis=0)
+
+    merged_cell_names = pd.Index(
+        chain.from_iterable([x.cell_names for x in csdata_lst]), dtype=object)
+    merged_feature_names = pd.Index(merged_vocab.keys(), dtype=object)
+
+    return CSData(
+        vocab = merged_vocab,
+        sentences = merged_sentences,
+        cell_names = merged_cell_names,
+        feature_names = merged_feature_names
+    )

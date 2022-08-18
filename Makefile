@@ -5,8 +5,11 @@
 # @author Rahul Dhodapkar <rahul.dhodapkar@yale.edu>
 #
 
-.PHONY: install
+.PHONY: install test
 
 install:
 	echo "Installing locally using setup.py"
 	python -m pip install -e .
+
+test:
+	pytest src/cell2sentence/tests
