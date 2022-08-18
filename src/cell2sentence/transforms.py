@@ -1,21 +1,25 @@
-#!/usr/bin/env python
-#
-# Transform data from common structures used in the analysis of single-cell and
-# single-nucleus RNA sequencing data, to cell sentences that can be used as
-# input for natural language processing tools.
+"""
+Data transformations and pre-processing for interpreting cells as sentences.
+
+Transform data from common structures used in the analysis of single-cell and
+single-nucleus RNA sequencing data, to cell sentences that can be used as
+input for natural language processing tools.
+"""
+
 #
 # @author Rahul Dhodapkar <rahul.dhodapkar@yale.edu>
 #
 
-from tqdm import tqdm
-import os
+import sys
+from collections import OrderedDict
+from itertools import chain
+
 import numpy as np
 import pandas as pd
 from scipy import sparse
-import sys
 from sklearn import model_selection
-from collections import OrderedDict
-from itertools import chain
+
+from tqdm import tqdm
 
 from .csdata import CSData
 
@@ -38,20 +42,20 @@ def train_test_validation_split(sentences,
         (train_sentences, test_sentences, val_sentences) split from the
         originally supplied sentences array.
     """
-    if (train_pct + test_pct + val_pct != 1):
+    if train_pct + test_pct + val_pct != 1:
         raise ValueError(
             'train_pct = {} + test_pct = {} + val_pct = {} do not sum to 1.'.format(
                 train_pct, test_pct, val_pct))
 
-    s1 = test_pct
-    s2 = val_pct / (1 - test_pct)
+    s_1 = test_pct
+    s_2 = val_pct / (1 - test_pct)
 
     X = range(len(sentences))
     X_train, X_test = model_selection.train_test_split(
-        X, test_size=s1, random_state=random_state)
+        X, test_size=s_1, random_state=random_state)
 
     X_train, X_val = model_selection.train_test_split(
-        X_train, test_size=s2, random_state=random_state)
+        X_train, test_size=s_2, random_state=random_state)
 
     return (sentences[X_train], sentences[X_test], sentences[X_val])
 
@@ -68,17 +72,18 @@ def generate_vocabulary(adata):
     Return:
         a dictionary of gene vocabulary
     """
-    if (len(adata.var) > len(adata.obs)):
-        print("WARN: more variables ({}) than observations ({}), did you mean to transpose the object (e.g. adata.T)?".format(
+    if len(adata.var) > len(adata.obs):
+        print(("WARN: more variables ({}) than observations ({})... " +
+              "did you mean to transpose the object (e.g. adata.T)?").format(
             len(adata.var), len(adata.obs)), file=sys.stderr)
 
     vocabulary = OrderedDict()
     gene_sums = np.ravel(np.sum(adata.X > 0, axis=0))
 
-    for i in range(len(adata.var_names)):
-        vocabulary[adata.var_names[i]] = gene_sums[i]
+    for i, name in enumerate(adata.var_names):
+        vocabulary[name] = gene_sums[i]
 
-    return(vocabulary)
+    return vocabulary
 
 
 def generate_sentences(adata, delimiter=" "):
@@ -96,10 +101,12 @@ def generate_sentences(adata, delimiter=" "):
     """
     if np.any([delimiter in x for x in adata.var_names]):
         raise ValueError(
-            'anndata var_names cannot contain sentence delimiter "{}", please re-format and try again'.format(delimiter))
+            ('anndata var_names cannot contain sentence delimiter "{}", ' +
+                'please re-format and try again').format(delimiter))
 
-    if (len(adata.var) > len(adata.obs)):
-        print("WARN: more variables ({}) than observations ({}), did you mean to transpose the object (e.g. adata.T)?".format(
+    if len(adata.var) > len(adata.obs):
+        print(("WARN: more variables ({}) than observations ({}), " +
+               "did you mean to transpose the object (e.g. adata.T)?").format(
             len(adata.var), len(adata.obs)), file=sys.stderr)
 
     mat = sparse.csr_matrix(adata.X)
@@ -111,7 +118,7 @@ def generate_sentences(adata, delimiter=" "):
 
         sentences.append(cols[np.argsort(-vals)])
 
-    return(np.array(sentences, dtype=object))
+    return np.array(sentences, dtype=object)
 
 
 def csdata_from_adata(adata):
@@ -162,9 +169,9 @@ def merge_csdata(csdata_lst):
 
     merged_sentence_data = []
     for i, csdata in enumerate(csdata_lst):
-        for j in range(len(csdata.sentences)):
-            for ix in range(len(csdata.sentences[j])):
-                csdata.sentences[j][ix] = enc_maps[i][csdata.sentences[j][ix]]
+        for j, sent in enumerate(csdata.sentences):
+            for k in range(len(csdata.sentences[j])):
+                sent[k] = enc_maps[i][sent[k]]
         merged_sentence_data.append(csdata.sentences)
 
     # update sentence data

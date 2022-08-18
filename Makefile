@@ -5,7 +5,7 @@
 # @author Rahul Dhodapkar <rahul.dhodapkar@yale.edu>
 #
 
-.PHONY: install test lint auto-fix-lint
+.PHONY: install test lint autopep
 
 install:
 	echo "Installing locally using setup.py"
@@ -17,5 +17,5 @@ test:
 lint:
 	pylint cell2sentence
 
-auto-fix-lint:
+autopep:
 	autopep8 --recursive --in-place --aggressive --aggressive src
