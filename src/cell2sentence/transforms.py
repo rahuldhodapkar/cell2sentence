@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 from sklearn import model_selection
+from sklearn.utils import shuffle
 
 from tqdm import tqdm
 
@@ -86,7 +87,7 @@ def generate_vocabulary(adata):
     return vocabulary
 
 
-def generate_sentences(adata, delimiter=" "):
+def generate_sentences(adata, random_state=42):
     """
     Transform expression matrix to sentences. Sentences contain gene "words"
     denoting genes with non-zero expression. Genes are ordered from highest
@@ -95,14 +96,11 @@ def generate_sentences(adata, delimiter=" "):
     Arguments:
         adata: an AnnData object to generate cell sentences from. Expects that
                `obs` correspond to cells and `vars` correspond to genes.
-        delimiter: default = ' '. A token delimter for the generated sentences.
+        random_state: sets the numpy random state for splitting ties
     Return:
         a `numpy.ndarray` of sentences, split by delimiter.
     """
-    if np.any([delimiter in x for x in adata.var_names]):
-        raise ValueError(
-            ('anndata var_names cannot contain sentence delimiter "{}", ' +
-                'please re-format and try again').format(delimiter))
+    np.random.seed(random_state)
 
     if len(adata.var) > len(adata.obs):
         print(("WARN: more variables ({}) than observations ({}), " +
@@ -116,24 +114,27 @@ def generate_sentences(adata, delimiter=" "):
         cols = mat.indices[mat.indptr[i]:mat.indptr[i + 1]]
         vals = mat.data[mat.indptr[i]:mat.indptr[i + 1]]
 
-        sentences.append(cols[np.argsort(-vals)])
+        cols, vals = shuffle(cols, vals)
+
+        sentences.append(cols[np.argsort(-vals, kind='stable')])
 
     return np.array(sentences, dtype=object)
 
 
-def csdata_from_adata(adata):
+def csdata_from_adata(adata, random_state=42):
     """
     Generate a CSData object from an AnnData object.
 
     Arguments:
         adata: an AnnData object to generate cell sentences from. Expects that
                `obs` correspond to cells and `vars` correspond to genes.
+        random_state: sets the numpy random state for splitting ties
     Return:
         a CSData object containing a vocabulary, sentences, and associated name data.
     """
     return CSData(
         vocab=generate_vocabulary(adata),
-        sentences=generate_sentences(adata),
+        sentences=generate_sentences(adata, random_state),
         cell_names=adata.obs_names,
         feature_names=adata.var_names
     )

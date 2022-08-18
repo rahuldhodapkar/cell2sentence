@@ -8,6 +8,7 @@ import scanpy as sc
 from pathlib import Path
 import cell2sentence as cs
 import numpy as np
+import random
 
 import pytest
 
@@ -45,3 +46,28 @@ class TestDataReading:
 
         merged_csdata = cs.transforms.merge_csdata([csdata1, csdata2])
         assert_vocab_correct(merged_csdata)
+
+    def test_random_tiebreaks(self):
+        X = np.array([[1, 1, 0],
+                      [2, 2, 3]], dtype=np.int64)
+        adata = ad.AnnData(
+            X=X,
+            obs=dict(Obs=["c1", "c2"]),
+            var=dict(Feat=["g1", "g2", "g3"]),
+            dtype=X.dtype
+        )
+        ranks_g1 = []
+        for i in range(1000):
+            csdata = cs.transforms.csdata_from_adata(
+                adata, random_state=random.randint(0, 100))
+            ranks_g1.append(np.sum(np.argwhere(csdata.sentences[0] == 0)))
+        assert np.mean(ranks_g1) < 0.6
+        assert np.mean(ranks_g1) > 0.4
+
+
+class TestSentenceSeralization:
+    def test_gen_sentence_strings(self):
+        adata = sc.read_csv(HERE / 'small_data.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata)
+        strings = csdata.generate_sentence_strings()
+        assert len(strings) == len(csdata.sentences)
