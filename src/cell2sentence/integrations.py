@@ -10,8 +10,7 @@ import sys
 from tqdm import tqdm
 
 
-
-def xlm_prepare_outpath(outpath, species_tag, 
+def xlm_prepare_outpath(outpath, species_tag,
                         vocab,
                         train_sentences, test_sentences, val_sentences):
     """
@@ -28,9 +27,9 @@ def xlm_prepare_outpath(outpath, species_tag,
         outpath: directory to write files to. Will create this directory
                  if it does not already exist.
         species_tag: a short string to be used as the species name in XLM.
-                     Fulfills functions analaglous to language tags such as 
+                     Fulfills functions analaglous to language tags such as
                      'en', 'es', or 'zh'.
-        vocab: a dictionary with the vocabulary and word frequencies for 
+        vocab: a dictionary with the vocabulary and word frequencies for
                the species
         train_sentences: sentences to train XLM on.
         test_sentences: sentences to test XLM on.
@@ -39,7 +38,7 @@ def xlm_prepare_outpath(outpath, species_tag,
     Return:
         None
     """
-    
+
     os.makedirs(outpath, exist_ok=True)
 
     print("INFO: Writing Vocabulary File", file=sys.stderr)

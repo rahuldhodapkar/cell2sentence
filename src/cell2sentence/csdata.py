@@ -14,4 +14,3 @@ class CSData():
         self.sentences = sentences
         self.cell_names = cell_names
         self.feature_names = feature_names
-

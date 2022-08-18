@@ -19,7 +19,8 @@ from itertools import chain
 
 from .csdata import CSData
 
-def train_test_validation_split(sentences, 
+
+def train_test_validation_split(sentences,
                                 train_pct=0.8,
                                 test_pct=0.1,
                                 val_pct=0.1,
@@ -40,8 +41,7 @@ def train_test_validation_split(sentences,
     if (train_pct + test_pct + val_pct != 1):
         raise ValueError(
             'train_pct = {} + test_pct = {} + val_pct = {} do not sum to 1.'.format(
-            train_pct, test_pct, val_pct
-        ))
+                train_pct, test_pct, val_pct))
 
     s1 = test_pct
     s2 = val_pct / (1 - test_pct)
@@ -70,7 +70,7 @@ def generate_vocabulary(adata):
     """
     if (len(adata.var) > len(adata.obs)):
         print("WARN: more variables ({}) than observations ({}), did you mean to transpose the object (e.g. adata.T)?".format(
-                len(adata.var), len(adata.obs)), file=sys.stderr)
+            len(adata.var), len(adata.obs)), file=sys.stderr)
 
     vocabulary = OrderedDict()
     gene_sums = np.ravel(np.sum(adata.X > 0, axis=0))
@@ -95,19 +95,19 @@ def generate_sentences(adata, delimiter=" "):
         a `numpy.ndarray` of sentences, split by delimiter.
     """
     if np.any([delimiter in x for x in adata.var_names]):
-        raise ValueError('anndata var_names cannot contain sentence delimiter "{}", please re-format and try again'.format(
-                delimiter))
+        raise ValueError(
+            'anndata var_names cannot contain sentence delimiter "{}", please re-format and try again'.format(delimiter))
 
     if (len(adata.var) > len(adata.obs)):
         print("WARN: more variables ({}) than observations ({}), did you mean to transpose the object (e.g. adata.T)?".format(
-                len(adata.var), len(adata.obs)), file=sys.stderr)
+            len(adata.var), len(adata.obs)), file=sys.stderr)
 
     mat = sparse.csr_matrix(adata.X)
 
     sentences = []
     for i in tqdm(range(mat.shape[0])):
-        cols = mat.indices[mat.indptr[i]:mat.indptr[i+1]]
-        vals = mat.data[mat.indptr[i]:mat.indptr[i+1]]
+        cols = mat.indices[mat.indptr[i]:mat.indptr[i + 1]]
+        vals = mat.data[mat.indptr[i]:mat.indptr[i + 1]]
 
         sentences.append(cols[np.argsort(-vals)])
 
@@ -125,10 +125,10 @@ def csdata_from_adata(adata):
         a CSData object containing a vocabulary, sentences, and associated name data.
     """
     return CSData(
-        vocab = generate_vocabulary(adata),
-        sentences = generate_sentences(adata),
-        cell_names = adata.obs_names,
-        feature_names = adata.var_names
+        vocab=generate_vocabulary(adata),
+        sentences=generate_sentences(adata),
+        cell_names=adata.obs_names,
+        feature_names=adata.var_names
     )
 
 
@@ -142,7 +142,8 @@ def merge_csdata(csdata_lst):
     Return:
         a merged CSData object.
     """
-    merged_features = set(chain.from_iterable([x.vocab.keys() for x in csdata_lst]))
+    merged_features = set(chain.from_iterable(
+        [x.vocab.keys() for x in csdata_lst]))
     merged_vocab = OrderedDict()
 
     for f in merged_features:
@@ -150,12 +151,13 @@ def merge_csdata(csdata_lst):
         for csdata in csdata_lst:
             merged_vocab[f] += csdata.vocab[f] if f in csdata.vocab else 0
 
-    feat_to_merged_enc = {k:i for i,k in enumerate(merged_vocab.keys())}
-    
+    feat_to_merged_enc = {k: i for i, k in enumerate(merged_vocab.keys())}
+
     enc_maps = []
     for csdata in csdata_lst:
         enc_maps.append(
-            {i:feat_to_merged_enc[k] for i,k in enumerate(csdata.vocab.keys())}
+            {i: feat_to_merged_enc[k]
+                for i, k in enumerate(csdata.vocab.keys())}
         )
 
     merged_sentence_data = []
@@ -173,8 +175,8 @@ def merge_csdata(csdata_lst):
     merged_feature_names = pd.Index(merged_vocab.keys(), dtype=object)
 
     return CSData(
-        vocab = merged_vocab,
-        sentences = merged_sentences,
-        cell_names = merged_cell_names,
-        feature_names = merged_feature_names
+        vocab=merged_vocab,
+        sentences=merged_sentences,
+        cell_names=merged_cell_names,
+        feature_names=merged_feature_names
     )

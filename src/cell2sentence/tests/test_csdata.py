@@ -13,6 +13,7 @@ import pytest
 
 HERE = Path(__file__).parent
 
+
 def assert_vocab_correct(csdata):
     enc_to_feat = list(csdata.vocab.keys())
     countwords = np.repeat(0, len(enc_to_feat))
@@ -27,12 +28,12 @@ def assert_vocab_correct(csdata):
 class TestDataReading:
     def test_read_adata(self):
         adata = sc.read_csv(HERE / 'small_data.csv').T
-        assert adata.shape==(5,3)
+        assert adata.shape == (5, 3)
 
     def test_csdata_from_adata(self):
         adata = sc.read_csv(HERE / 'small_data.csv').T
         csdata = cs.transforms.csdata_from_adata(adata)
-        assert(list(csdata.vocab.keys()) == ['g1','g2','g3'])
+        assert(list(csdata.vocab.keys()) == ['g1', 'g2', 'g3'])
         assert_vocab_correct(csdata)
 
     def test_merge_csdata(self):
