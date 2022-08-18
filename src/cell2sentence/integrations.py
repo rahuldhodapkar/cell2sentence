@@ -34,15 +34,19 @@ def xlm_prepare_outpath(csdata,
         species_tag: a short string to be used as the species name in XLM.
                      Fulfills functions analaglous to language tags such as
                      'en', 'es', or 'zh'.
+        delimiter: default = ' '. A token delimter for the generated sentences.
         params: a parameter object passed to train_test_validation_split:
     Return:
         None
     """
+
     if params is None:
         params = {}
 
+    sentence_strings = csdata.generate_sentence_strings(delimiter=' ')
+
     train_sentences, test_sentences, val_sentences = \
-        train_test_validation_split(csdata.sentences, **params)
+        train_test_validation_split(sentence_strings, **params)
 
     os.makedirs(outpath, exist_ok=True)
 

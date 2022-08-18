@@ -85,3 +85,23 @@ class CSData():
                 'mean_rank_group_2': np.mean(ranks_group_2)
             })
         return pd.DataFrame(stats_results)
+
+    def generate_sentence_strings(self, delimiter=' '):
+        """
+        Convert internal sentence representation (arrays of ints) to traditional
+        delimited character strings for integration with text-processing utilities.
+        """
+        if np.any([delimiter in x for x in self.feature_names]):
+            raise ValueError(
+                ('feature names cannot contain sentence delimiter "{}", ' +
+                 'please re-format and try again').format(delimiter))
+
+        enc_map = list(self.vocab.keys())
+
+        joined_sentences = []
+        for s in self.sentences:
+            joined_sentences.append(delimiter.join(
+                [enc_map[x] for x in s]
+            ))
+
+        return np.array(joined_sentences, dtype=object)
