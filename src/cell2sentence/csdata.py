@@ -6,11 +6,29 @@ Main data wrapper class definition
 # @author Rahul Dhodapkar
 #
 
-import jellyfish
 import numpy as np
 import pandas as pd
 from scipy import stats
-from tqdm import tqdm
+import zlib
+from multiprocessing import Pool
+
+
+def zlib_ncd(csdata, s_ix1, s_ix2):
+    """
+    Return the zlib normalized compression distance between two strings
+    """
+    s1 = csdata.sentences[s_ix1]
+    s2 = csdata.sentences[s_ix2]
+
+    bs1 = bytes(s1, 'utf-8')
+    bs2 = bytes(s2, 'utf-8')
+
+    comp_cat = zlib.compress(bs1 + bs2)
+    comp_bs1 = zlib.compress(bs1)
+    comp_bs2 = zlib.compress(bs2)
+
+    return ((len(comp_cat) - min(len(comp_bs1), len(comp_bs2)))
+            / max(len(comp_bs1), len(comp_bs2)))
 
 
 class CSData():
@@ -24,7 +42,7 @@ class CSData():
         self.cell_names = cell_names
         self.feature_names = feature_names
 
-    def distance_matrix(self, dist_type='jaro'):
+    def distance_matrix(self, dist_type='zlib_ncd', n_proc=6):
         """
         Calculate the distance matrix for the CSData object with the specified
         edit distance method. Currently supported: ("levenshtein").
@@ -33,20 +51,29 @@ class CSData():
         """
 
         dist_funcs = {
-            'levenshtein': jellyfish.levenshtein_distance,
-            'damerau_levenshtein': jellyfish.damerau_levenshtein_distance,
-            'jaro': lambda x,y: 1 - jellyfish.jaro_similarity(x,y)
+            'zlib_ncd': zlib_ncd,
         }
 
-        mat = np.zeros(shape=(len(self.sentences), len(self.sentences)))
+        mat = np.ones(shape=(len(self.sentences), len(self.sentences)))
 
-        for i, s_i in enumerate(tqdm(self.sentences)):
-            for j, s_j in enumerate(self.sentences):
+        jobs = []
+        for i in range(len(self.sentences)):
+            for j in range(len(self.sentences)):
                 if j < i:
                     continue
 
-                mat[i, j] = dist_funcs[dist_type](s_i, s_j)
-                mat[j, i] = mat[i, j]
+                jobs.append((self, i, j))
+
+        jobs_output = None
+        with Pool(n_proc) as p:
+            jobs_output = p.starmap(dist_funcs[dist_type], jobs)
+
+        if jobs_output is None:
+            raise RuntimeError('multiprocessing failed to map jobs')
+
+        for i, p in enumerate(jobs):
+            mat[p[1], p[2]] = jobs_output[i]
+            mat[p[2], p[1]] = jobs_output[i]
 
         return mat
 
