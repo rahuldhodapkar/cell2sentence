@@ -77,6 +77,6 @@ class TestSentenceProcessing:
     def test_edit_distance(self):
         adata = sc.read_csv(HERE / 'small_data.csv').T
         csdata = cs.transforms.csdata_from_adata(adata)
-        mat = csdata.distance_matrix()
-        assert mat[3,4] > mat[3,3] 
-
+        mat = csdata.distance_matrix(dist_type='levenshtein')
+        assert mat[3, 4] > mat[3, 3]
+        assert mat[3, 4] == mat[4, 3]

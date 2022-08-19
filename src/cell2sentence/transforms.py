@@ -116,7 +116,8 @@ def generate_sentences(adata, random_state=42):
 
         cols, vals = shuffle(cols, vals)
 
-        sentences.append(''.join([chr(x) for x in cols[np.argsort(-vals, kind='stable')]]))
+        sentences.append(
+            ''.join([chr(x) for x in cols[np.argsort(-vals, kind='stable')]]))
 
     return np.array(sentences, dtype=object)
 

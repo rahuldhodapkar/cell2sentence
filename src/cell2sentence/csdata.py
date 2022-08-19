@@ -24,7 +24,7 @@ class CSData():
         self.cell_names = cell_names
         self.feature_names = feature_names
 
-    def distance_matrix(self, dist_type='jaro'):
+    def distance_matrix(self, dist_type='levenshtein', prefix_len=100):
         """
         Calculate the distance matrix for the CSData object with the specified
         edit distance method. Currently supported: ("levenshtein").
@@ -35,19 +35,25 @@ class CSData():
         dist_funcs = {
             'levenshtein': jellyfish.levenshtein_distance,
             'damerau_levenshtein': jellyfish.damerau_levenshtein_distance,
-            'jaro': lambda x,y: 1 - jellyfish.jaro_similarity(x,y)
+            'jaro': lambda x, y: 1 - jellyfish.jaro_similarity(x, y)
+        }
+
+        is_symmetric = {
+            'levenshtein': True,
+            'damerau_levenshtein': True,
+            'jaro': True
         }
 
         mat = np.zeros(shape=(len(self.sentences), len(self.sentences)))
 
         for i, s_i in enumerate(tqdm(self.sentences)):
             for j, s_j in enumerate(self.sentences):
-                if j < i:
+                if j < i and is_symmetric[dist_type]:
+                    mat[i, j] = mat[j, i]
                     continue
 
-                mat[i, j] = dist_funcs[dist_type](s_i, s_j)
-                mat[j, i] = mat[i, j]
-
+                mat[i, j] = dist_funcs[dist_type](
+                    s_i[:prefix_len], s_j[:prefix_len])
         return mat
 
     def differential_rank(self, sentence_ixs_1, sentence_ixs_2=None):

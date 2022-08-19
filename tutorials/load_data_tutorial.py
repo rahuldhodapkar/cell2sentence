@@ -23,7 +23,7 @@ adata = sc.read_10x_mtx(
 csdata = cs.transforms.csdata_from_adata(adata)
 
 # (3) generate edit distance matrix
-dist = csdata.distance_matrix(dist_type='jaro')
+dist = csdata.distance_matrix(dist_type='levenshtein')
 
 # (4) compute UMAP embedding from distance matrix for visualization
 reducer = umap.UMAP(metric='precomputed', n_components=2)
