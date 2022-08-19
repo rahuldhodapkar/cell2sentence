@@ -11,7 +11,22 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from tqdm import tqdm
+import zlib
 
+
+def zlib_ncd(s1, s2):
+    """
+    Return the zlib normalized compression distance between two strings
+    """
+    bs1 = bytes(s1, 'utf-8')
+    bs2 = bytes(s2, 'utf-8')
+
+    comp_cat = zlib.compress(bs1 + bs2)
+    comp_bs1 = zlib.compress(bs1)
+    comp_bs2 = zlib.compress(bs2)
+
+    return ((len(comp_cat) - min(len(comp_bs1), len(comp_bs2)))
+            / max(len(comp_bs1), len(comp_bs2)))
 
 class CSData():
     """
@@ -24,7 +39,7 @@ class CSData():
         self.cell_names = cell_names
         self.feature_names = feature_names
 
-    def distance_matrix(self, dist_type='levenshtein', prefix_len=100):
+    def distance_matrix(self, dist_type='zlib_ncd', prefix_len=100):
         """
         Calculate the distance matrix for the CSData object with the specified
         edit distance method. Currently supported: ("levenshtein").
@@ -35,13 +50,18 @@ class CSData():
         dist_funcs = {
             'levenshtein': jellyfish.levenshtein_distance,
             'damerau_levenshtein': jellyfish.damerau_levenshtein_distance,
-            'jaro': lambda x, y: 1 - jellyfish.jaro_similarity(x, y)
+            'jaro': lambda x, y: 1 - jellyfish.jaro_similarity(x, y),
+            'jaro_winkler':
+                lambda x, y: 1 - jellyfish.jaro_winkler_similarity(x, y, longtolerance=True),
+            'zlib_ncd': zlib_ncd
         }
 
         is_symmetric = {
             'levenshtein': True,
             'damerau_levenshtein': True,
-            'jaro': True
+            'jaro': True,
+            'jaro_winkler': True,
+            'zlib_ncd': False
         }
 
         mat = np.zeros(shape=(len(self.sentences), len(self.sentences)))
@@ -54,6 +74,7 @@ class CSData():
 
                 mat[i, j] = dist_funcs[dist_type](
                     s_i[:prefix_len], s_j[:prefix_len])
+
         return mat
 
     def differential_rank(self, sentence_ixs_1, sentence_ixs_2=None):
