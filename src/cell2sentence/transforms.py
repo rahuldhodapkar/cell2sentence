@@ -116,7 +116,7 @@ def generate_sentences(adata, random_state=42):
 
         cols, vals = shuffle(cols, vals)
 
-        sentences.append(cols[np.argsort(-vals, kind='stable')])
+        sentences.append(''.join([chr(x) for x in cols[np.argsort(-vals, kind='stable')]]))
 
     return np.array(sentences, dtype=object)
 
@@ -168,15 +168,12 @@ def merge_csdata(csdata_lst):
                 for i, k in enumerate(csdata.vocab.keys())}
         )
 
-    merged_sentence_data = []
+    merged_sentences = []
     for i, csdata in enumerate(csdata_lst):
-        for j, sent in enumerate(csdata.sentences):
-            for k in range(len(csdata.sentences[j])):
-                sent[k] = enc_maps[i][sent[k]]
-        merged_sentence_data.append(csdata.sentences)
-
-    # update sentence data
-    merged_sentences = np.concatenate(merged_sentence_data, axis=0)
+        for sent in csdata.sentences:
+            merged_sentences.append(
+                ''.join([chr(enc_maps[i][ord(x)]) for x in sent])
+            )
 
     merged_cell_names = pd.Index(
         chain.from_iterable([x.cell_names for x in csdata_lst]), dtype=object)

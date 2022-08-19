@@ -20,7 +20,7 @@ def assert_vocab_correct(csdata):
     countwords = np.repeat(0, len(enc_to_feat))
     for i in range(len(csdata.sentences)):
         for j in range(len(csdata.sentences[i])):
-            countwords[csdata.sentences[i][j]] += 1
+            countwords[ord(csdata.sentences[i][j])] += 1
 
     for i, k in enumerate(csdata.vocab):
         assert countwords[i] == csdata.vocab[k]
@@ -60,7 +60,7 @@ class TestDataReading:
         for i in range(1000):
             csdata = cs.transforms.csdata_from_adata(
                 adata, random_state=random.randint(0, 100))
-            ranks_g1.append(np.sum(np.argwhere(csdata.sentences[0] == 0)))
+            ranks_g1.append(csdata.sentences[0].find(chr(0)))
         assert np.mean(ranks_g1) < 0.6
         assert np.mean(ranks_g1) > 0.4
 
@@ -71,3 +71,12 @@ class TestSentenceSeralization:
         csdata = cs.transforms.csdata_from_adata(adata)
         strings = csdata.generate_sentence_strings()
         assert len(strings) == len(csdata.sentences)
+
+
+class TestSentenceProcessing:
+    def test_edit_distance(self):
+        adata = sc.read_csv(HERE / 'small_data.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata)
+        mat = csdata.distance_matrix()
+        assert mat[3,4] > mat[3,3] 
+

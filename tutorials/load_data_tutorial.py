@@ -6,31 +6,29 @@
 
 import cell2sentence as cs
 import scanpy as sc
+import matplotlib.pyplot as plt
+import seaborn as sns
+import umap
 
 import os
 os.makedirs('./calc', exist_ok=True)
 
 # standard cell2sentence workflow:
+adata = sc.read_10x_mtx(
+    'tutorials/tutorialdata/filtered_gene_bc_matrices/hg19/',
+    var_names='gene_symbols',
+    cache=True)
 
-# (1) load count matrix into anndata object depending on input format.
-chick_adata = sc.read_csv('./data/chick/GSE159107_E12chick_count.matrix.csv.gz')
-chick_adata = chick_adata.T # ensure that obs = cells, vars = genes.
+# (2) convert to sentence format
+csdata = cs.transforms.csdata_from_adata(adata)
 
-# (2) generate sentences from anndata object.
-chick_sentences = cs.transforms.generate_sentences(chick_adata)
+# (3) generate edit distance matrix
+dist = csdata.distance_matrix(dist_type='jaro')
 
-# (3) use anndata object to build vocabulary dictionary.
-chick_vocab = cs.transforms.generate_vocabulary(chick_adata)
+# (4) compute UMAP embedding from distance matrix for visualization
+reducer = umap.UMAP(metric='precomputed', n_components=2)
+embedding = reducer.fit_transform(dist)
 
-# (4) split sentences into train, test, and validation segments.
-train_chick, test_chick, val_chick = (
-    cs.transforms.train_test_validation_split(chick_sentences))
-
-# (5) format for downstream analysis, for example cross species single-cell
-#     integration using XLM
-cs.integrations.xlm_prepare_outpath(
-    outpath='./calc/xlm_outpath', species_tag='chick',
-    vocab=chick_vocab,
-    train_sentences=train_chick,
-    test_sentences=test_chick,
-    val_sentences=val_chick)
+plt.scatter(
+    embedding[:, 0],
+    embedding[:, 1])

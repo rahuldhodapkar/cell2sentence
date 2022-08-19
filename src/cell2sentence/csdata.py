@@ -6,10 +6,11 @@ Main data wrapper class definition
 # @author Rahul Dhodapkar
 #
 
-import textdistance
+import jellyfish
 import numpy as np
 import pandas as pd
 from scipy import stats
+from tqdm import tqdm
 
 
 class CSData():
@@ -23,21 +24,29 @@ class CSData():
         self.cell_names = cell_names
         self.feature_names = feature_names
 
-    def distance_matrix(self, dist_type='levenshtein'):
+    def distance_matrix(self, dist_type='jaro'):
         """
         Calculate the distance matrix for the CSData object with the specified
-        edit distance method. Currently supported: ("levenshtein")
+        edit distance method. Currently supported: ("levenshtein").
+
+        Distance caculated as d = 1 / (1 + x) where x is the similarity score.
         """
 
         dist_funcs = {
-            'levenshtein': textdistance.levenshtein
+            'levenshtein': jellyfish.levenshtein_distance,
+            'damerau_levenshtein': jellyfish.damerau_levenshtein_distance,
+            'jaro': lambda x,y: 1 - jellyfish.jaro_similarity(x,y)
         }
 
         mat = np.zeros(shape=(len(self.sentences), len(self.sentences)))
 
-        for i, s_i in enumerate(self.sentences):
+        for i, s_i in enumerate(tqdm(self.sentences)):
             for j, s_j in enumerate(self.sentences):
+                if j < i:
+                    continue
+
                 mat[i, j] = dist_funcs[dist_type](s_i, s_j)
+                mat[j, i] = mat[i, j]
 
         return mat
 
@@ -101,7 +110,7 @@ class CSData():
         joined_sentences = []
         for s in self.sentences:
             joined_sentences.append(delimiter.join(
-                [enc_map[x] for x in s]
+                [enc_map[ord(x)] for x in s]
             ))
 
         return np.array(joined_sentences, dtype=object)
