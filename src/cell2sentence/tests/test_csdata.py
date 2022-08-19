@@ -78,5 +78,4 @@ class TestSentenceProcessing:
         adata = sc.read_csv(HERE / 'small_data.csv').T
         csdata = cs.transforms.csdata_from_adata(adata)
         mat = csdata.distance_matrix()
-        assert mat[3,4] > mat[3,3] 
-
+        assert mat[3, 4] > mat[3, 3]

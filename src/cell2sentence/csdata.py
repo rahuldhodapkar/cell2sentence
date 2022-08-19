@@ -11,6 +11,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from tqdm import tqdm
+import vptree
+import math
 
 
 class CSData():
@@ -24,30 +26,46 @@ class CSData():
         self.cell_names = cell_names
         self.feature_names = feature_names
 
-    def distance_matrix(self, dist_type='jaro'):
+    def distance_matrix(self, dist_type='cosine', n_neighbors=15):
         """
         Calculate the distance matrix for the CSData object with the specified
-        edit distance method. Currently supported: ("levenshtein").
+        edit distance method. Currently supported: ("cosine"). For efficiency,
+        this method will only calculate distance for the n_neighbors nearest
+        neighbors at each point.
 
         Distance caculated as d = 1 / (1 + x) where x is the similarity score.
         """
+        def rank_weighted_cosine_dist(x1, x2):
+            """
+            Calculate cosine similarity and invert for distance measure
+            """
+            char2ix1 = {k: i for i, k in enumerate(self.sentences[x1])}
+            char2ix2 = {k: i for i, k in enumerate(self.sentences[x2])}
+            shared_chars = set(char2ix1.keys()).intersection(set(char2ix2.keys()))
+            numerator = np.sum([char2ix1[x] * char2ix2[x]
+                               for x in shared_chars])
+            denominator = (
+                math.sqrt(np.sum([char2ix1[x] ** 2 for x in char2ix1.keys()]))
+                * math.sqrt(np.sum([char2ix2[x] ** 2 for x in char2ix2.keys()]))
+            )
+            if not denominator:
+                return 1.0
+            else:
+                return 1 - float(numerator) / denominator
 
         dist_funcs = {
-            'levenshtein': jellyfish.levenshtein_distance,
-            'damerau_levenshtein': jellyfish.damerau_levenshtein_distance,
-            'jaro': lambda x,y: 1 - jellyfish.jaro_similarity(x,y)
+            'cosine': rank_weighted_cosine_dist
         }
 
-        mat = np.zeros(shape=(len(self.sentences), len(self.sentences)))
+        tree = vptree.VPTree(range(len(self.sentences)), dist_funcs[dist_type])
+        mat = np.full(shape=(len(self.sentences), len(self.sentences)),
+                      fill_value=np.inf)
 
-        for i, s_i in enumerate(tqdm(self.sentences)):
-            for j, s_j in enumerate(self.sentences):
-                if j < i:
-                    continue
-
-                mat[i, j] = dist_funcs[dist_type](s_i, s_j)
-                mat[j, i] = mat[i, j]
-
+        for i in tqdm(range(len(self.sentences))):
+            neighbors_list = tree.get_n_nearest_neighbors(i, n_neighbors + 1)
+            for dist, neighbor_ix in neighbors_list:
+                mat[i, neighbor_ix] = dist
+                mat[neighbor_ix, i] = dist
         return mat
 
     def differential_rank(self, sentence_ixs_1, sentence_ixs_2=None):
