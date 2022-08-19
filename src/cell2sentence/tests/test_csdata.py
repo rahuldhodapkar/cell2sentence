@@ -9,6 +9,7 @@ from pathlib import Path
 import cell2sentence as cs
 import numpy as np
 import random
+import math
 
 import pytest
 
@@ -80,3 +81,13 @@ class TestSentenceProcessing:
         mat = csdata.distance_matrix(dist_type='levenshtein')
         assert mat[3, 4] > mat[3, 3]
         assert mat[3, 4] == mat[4, 3]
+
+
+class TestRankExtraction:
+    def test_rank_extraction(self):
+        adata = sc.read_csv(HERE / 'small_data.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata)
+        rank_vec = csdata.get_rank_data_for_feature('g3')
+        assert rank_vec[0] == 1
+        assert rank_vec[1] == 2
+        assert math.isnan(rank_vec[2])

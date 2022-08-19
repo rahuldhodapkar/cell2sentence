@@ -28,6 +28,7 @@ def zlib_ncd(s1, s2):
     return ((len(comp_cat) - min(len(comp_bs1), len(comp_bs2)))
             / max(len(comp_bs1), len(comp_bs2)))
 
+
 class CSData():
     """
     Lightweight wrapper class to wrap cell2sentence results.
@@ -50,11 +51,11 @@ class CSData():
         dist_funcs = {
             'levenshtein': jellyfish.levenshtein_distance,
             'damerau_levenshtein': jellyfish.damerau_levenshtein_distance,
-            'jaro': lambda x, y: 1 - jellyfish.jaro_similarity(x, y),
+            'jaro':
+                lambda x, y: 1 - jellyfish.jaro_similarity(x, y),  # NOQA
             'jaro_winkler':
-                lambda x, y: 1 - jellyfish.jaro_winkler_similarity(x, y, longtolerance=True),
-            'zlib_ncd': zlib_ncd
-        }
+                lambda x, y: 1 - jellyfish.jaro_winkler_similarity(x, y),  # NOQA
+            'zlib_ncd': zlib_ncd}
 
         is_symmetric = {
             'levenshtein': True,
@@ -121,6 +122,36 @@ class CSData():
                 'mean_rank_group_2': np.mean(ranks_group_2)
             })
         return pd.DataFrame(stats_results)
+
+    def get_rank_data_for_feature(self, feature_name, invert=False):
+        """
+        Return an array of ranks corresponding to the prescence of a gene within
+        each cell sentence. If a gene is not present in a cell sentence, np.nan
+        is returned for that cell.
+
+        Note that this returns rank (1-indexed), not position within the underlying
+        gene rank list string (0-indexed).
+        """
+        feature_code = -1
+        for i, k in enumerate(self.vocab.keys()):
+            if k == feature_name:
+                feature_code = i
+                break
+
+        if feature_code == -1:
+            raise ValueError(
+                'invalid feature {} not found in vocabulary'.format(feature_name))
+        feature_enc = chr(feature_code)
+
+        rank_data_vec = np.full((len(self.cell_names)), np.nan)
+        for i, s in enumerate(self.sentences):
+            ft_loc = s.find(feature_enc)
+            if invert:
+                rank_data_vec[i] = len(s) - ft_loc if ft_loc != -1 else np.nan
+            else:
+                rank_data_vec[i] = ft_loc + 1 if ft_loc != -1 else np.nan
+
+        return rank_data_vec
 
     def generate_sentence_strings(self, delimiter=' '):
         """
