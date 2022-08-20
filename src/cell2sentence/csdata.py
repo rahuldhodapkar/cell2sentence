@@ -81,7 +81,7 @@ class CSData():
 
         return self.distance_matrix
 
-    def build_knn_graph(self, k=15):
+    def create_knn_graph(self, k=15):
         """
         Create KNN graph
         """
@@ -98,59 +98,51 @@ class CSData():
 
         masked_adj_matrix = knn_mask * adj_matrix
 
-        self.knn_graph = ig.Graph.Weighted_Adjacency(masked_adj_matrix)
+        self.knn_graph = ig.Graph.Weighted_Adjacency(masked_adj_matrix).as_undirected()
         return self.knn_graph
 
-    def find_clusters(self, method='leiden'):
+
+    def create_rank_matrix(self):
         """
-        Performs cell clustering using the computed distance matrix. Currently supported methods:
-        ('leiden')
+        Generates a per-cell rank matrix for use with matrix-based tools. Features with zero
+        expression are zero, while remaining features are ranked according to distance from
+        the end of the rank list.
         """
+        full_rank_matrix = np.zeros( (len(self.cell_names), len(self.feature_names)) )
+
+        for i, s in enumerate(tqdm(self.sentences)):
+            for rank_position, c in enumerate(s):
+                full_rank_matrix[i, ord(c)] = len(s) - rank_position
+
+        return full_rank_matrix
 
 
-
-    def find_differential_features(self, sentence_ixs_1, sentence_ixs_2=None):
+    def find_differential_features(self, ident_1, ident_2=None, min_pct=0.1):
         """
         Perform differential feature rank testing given a set of sentence indexes.
         If only one group is given, the remaining sentences are automatically used
         as the comparator group.
         """
 
+        if ident_2 is None:
+            ident_2 = list(set(range(len(self.sentences))).difference(set(ident_1)))
+
+        full_rank_matrix = self.create_rank_matrix()
+        feature_ixs_to_test = np.array(
+                np.sum(full_rank_matrix > 0, axis=0) > min_pct * len(self.cell_names)
+            ).nonzero()[0]
+
         stats_results = []
-        for i, f in enumerate(self.feature_names):
-            # test feature f.
-
-            if sentence_ixs_2 is None:
-                sentence_ixs_2 = set(range(len(self.sentences))).difference(
-                    set(sentence_ixs_1))
-
-            ranks_group_1 = []
-            for s_ix in sentence_ixs_1:
-                ranks = np.argwhere(self.sentences[s_ix] == i)
-                if len(ranks) == 0:
-                    ranks_group_1.append(
-                        (len(self.feature_names) - len(self.sentences[s_ix])) / 2)
-                else:
-                    ranks_group_1.append(np.mean(ranks))
-
-            ranks_group_2 = []
-            for s_ix in sentence_ixs_2:
-                ranks = np.argwhere(self.sentences[s_ix] == i)
-                if len(ranks) == 0:
-                    ranks_group_2.append(
-                        (len(self.feature_names) - len(self.sentences[s_ix])) / 2)
-                else:
-                    ranks_group_2.append(np.mean(ranks))
-
+        for f in tqdm(feature_ixs_to_test):
             wilcox_stat, pval = stats.ranksums(
-                x=ranks_group_1, y=ranks_group_2
+                x=full_rank_matrix[ident_1, f], y=full_rank_matrix[ident_2, f]
             )
             stats_results.append({
-                'feature': f,
+                'feature': self.feature_names[f],
                 'w_stat': wilcox_stat,
                 'p_val': pval,
-                'mean_rank_group_1': np.mean(ranks_group_1),
-                'mean_rank_group_2': np.mean(ranks_group_2)
+                'mean_rank_group_1': np.mean(full_rank_matrix[ident_1, f]),
+                'mean_rank_group_2': np.mean(full_rank_matrix[ident_2, f])
             })
         return pd.DataFrame(stats_results)
 

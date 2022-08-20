@@ -77,8 +77,15 @@ class TestCoreWorkflow:
         adata = sc.read_csv(HERE / 'small_data.csv').T
         csdata = cs.transforms.csdata_from_adata(adata)
         csdata.create_distance_matrix(dist_type='levenshtein')
-        csdata.build_knn_graph(k=15)
+        csdata.create_knn_graph(k=15)
         assert csdata.knn_graph is not None
+
+    def test_rank_matrix_creation(self):
+        adata = sc.read_csv(HERE / 'small_data.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata)
+        rank_matrix = csdata.create_rank_matrix()
+        assert rank_matrix[0][0] == 0
+        assert rank_matrix[0][2] == 1
 
     def test_rank_extraction(self):
         adata = sc.read_csv(HERE / 'small_data.csv').T
@@ -87,6 +94,11 @@ class TestCoreWorkflow:
         assert rank_vec[0] == 1
         assert rank_vec[1] == 2
         assert math.isnan(rank_vec[2])
+
+    def test_differential_expression(self):
+        adata = sc.read_csv(HERE / 'small_data.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata)
+        df = csdata.find_differential_features(ident_1 = [1,2])
 
 class TestSentenceSeralization:
     def test_gen_sentence_strings(self):

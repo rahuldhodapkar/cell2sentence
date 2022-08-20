@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
 import umap
+import igraph as ig
 
 import os
 os.makedirs('./calc', exist_ok=True)
@@ -26,10 +27,43 @@ csdata = cs.transforms.csdata_from_adata(adata)
 # (3) generate edit distance matrix
 dist = csdata.create_distance_matrix(dist_type='jaro', prefix_len=25)
 
-# (4) compute UMAP embedding from distance matrix for visualization
+# (4) create weighted k nearest neighbors graph
+csdata.create_knn_graph(k=15)
+clustering = csdata.knn_graph.community_multilevel()
+
+c1_diff = csdata.find_differential_features(
+    ident_1 = [i for i, x in enumerate(clustering.membership) if x == 1]
+)
+c1_diff.sort_values(by=['p_val'], ascending=True)
+
+# (5) compute UMAP embedding from distance matrix for visualization
 reducer = umap.UMAP(metric='precomputed', n_components=2)
 embedding = reducer.fit_transform(dist)
 
+# (6) visualize clusters on embedding
+plt.scatter(
+    embedding[:, 0],
+    embedding[:, 1],
+    c=clustering.membership,
+    plotnonfinite = True,
+    s=1)
+plt.show()
+
+
+# (7) identify differential genes for each cluster.
+
+c1_diff = csdata.find_differential_features(
+    ident_1 = [i for i, x in enumerate(clustering.membership) if x == 1]
+)
+
+
+clustering = csdata.knn_graph.community_leiden(
+    objective_function='modularity')
+clustering = csdata.knn_graph.community_spinglass()
+clustering = csdata.knn_graph.community_walktrap().as_clustering()
+
+
+# (7) plot characteristic gene expression by rank
 cmap = mpl.cm.get_cmap("jet").copy()
 cmap.set_bad('gray', 0.7)
 
