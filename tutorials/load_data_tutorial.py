@@ -7,6 +7,7 @@
 import cell2sentence as cs
 import scanpy as sc
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import seaborn as sns
 import umap
 
@@ -29,8 +30,72 @@ dist = csdata.distance_matrix(dist_type='jaro', prefix_len=25)
 reducer = umap.UMAP(metric='precomputed', n_components=2)
 embedding = reducer.fit_transform(dist)
 
+cmap = mpl.cm.get_cmap("jet").copy()
+cmap.set_bad('gray', 0.7)
+
 plt.scatter(
     embedding[:, 0],
-    embedding[:, 1])
+    embedding[:, 1],
+    c=csdata.get_rank_data_for_feature('PPBP', invert=True),
+    cmap = cmap,
+    plotnonfinite = True,
+    s=1)
+plt.show()
+
+plt.scatter(
+    embedding[:, 0],
+    embedding[:, 1],
+    c=csdata.get_rank_data_for_feature('CD3E', invert=True),
+    cmap = cmap,
+    plotnonfinite = True,
+    s=1.5)
+plt.show()
+
+plt.scatter(
+    embedding[:, 0],
+    embedding[:, 1],
+    c=csdata.get_rank_data_for_feature('MS4A1', invert=True),
+    cmap = cmap,
+    plotnonfinite = True,
+    s=1.5)
+plt.show()
+
+plt.scatter(
+    embedding[:, 0],
+    embedding[:, 1],
+    c=csdata.get_rank_data_for_feature('FCER1A', invert=True),
+    cmap = cmap,
+    plotnonfinite = True,
+    s=1.5)
+plt.show()
+
+plt.scatter(
+    embedding[:, 0],
+    embedding[:, 1],
+    c=csdata.get_rank_data_for_feature('CD8A', invert=True),
+    cmap = cmap,
+    plotnonfinite = True,
+    s=1.5)
+plt.show()
+
+plt.scatter(
+    embedding[:, 0],
+    embedding[:, 1],
+    c=csdata.get_rank_data_for_feature('FCGR3A', invert=True),
+    cmap = cmap,
+    plotnonfinite = True,
+    s=1.5)
+plt.show()
+
+plt.scatter(
+    embedding[:, 0],
+    embedding[:, 1],
+    c=csdata.get_rank_data_for_feature('CD8A', invert=True),
+    cmap = cmap,
+    plotnonfinite = True,
+    s=1.5)
+plt.show()
+
+
 
 

@@ -11,22 +11,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from tqdm import tqdm
-import zlib
 
-
-def zlib_ncd(s1, s2):
-    """
-    Return the zlib normalized compression distance between two strings
-    """
-    bs1 = bytes(s1, 'utf-8')
-    bs2 = bytes(s2, 'utf-8')
-
-    comp_cat = zlib.compress(bs1 + bs2)
-    comp_bs1 = zlib.compress(bs1)
-    comp_bs2 = zlib.compress(bs2)
-
-    return ((len(comp_cat) - min(len(comp_bs1), len(comp_bs2)))
-            / max(len(comp_bs1), len(comp_bs2)))
+from .utils import zlib_ncd
 
 
 class CSData():
@@ -39,14 +25,21 @@ class CSData():
         self.sentences = sentences
         self.cell_names = cell_names
         self.feature_names = feature_names
+        self.distance_matrix = None
+        self.distance_params = None
 
-    def distance_matrix(self, dist_type='zlib_ncd', prefix_len=100):
+    def create_distance_matrix(self, dist_type='zlib_ncd', prefix_len=100):
         """
         Calculate the distance matrix for the CSData object with the specified
         edit distance method. Currently supported: ("levenshtein").
 
         Distance caculated as d = 1 / (1 + x) where x is the similarity score.
         """
+        if self.distance_matrix is not None and (
+            self.distance_params['dist_type'] == dist_type
+            and self.distance_params['prefix_len'] == prefix_len
+        ):
+            return self.distance_matrix
 
         dist_funcs = {
             'levenshtein': jellyfish.levenshtein_distance,
@@ -76,9 +69,14 @@ class CSData():
                 mat[i, j] = dist_funcs[dist_type](
                     s_i[:prefix_len], s_j[:prefix_len])
 
-        return mat
+        self.distance_params = {
+            'dist_type': dist_type,
+            'prefix_len': prefix_len
+        }
+        self.distance_matrix = mat
+        return self.distance_matrix
 
-    def differential_rank(self, sentence_ixs_1, sentence_ixs_2=None):
+    def find_differential_features(self, sentence_ixs_1, sentence_ixs_2=None):
         """
         Perform differential feature rank testing given a set of sentence indexes.
         If only one group is given, the remaining sentences are automatically used
@@ -153,7 +151,7 @@ class CSData():
 
         return rank_data_vec
 
-    def generate_sentence_strings(self, delimiter=' '):
+    def create_sentence_strings(self, delimiter=' '):
         """
         Convert internal sentence representation (arrays of ints) to traditional
         delimited character strings for integration with text-processing utilities.

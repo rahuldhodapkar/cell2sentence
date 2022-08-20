@@ -70,7 +70,7 @@ class TestSentenceSeralization:
     def test_gen_sentence_strings(self):
         adata = sc.read_csv(HERE / 'small_data.csv').T
         csdata = cs.transforms.csdata_from_adata(adata)
-        strings = csdata.generate_sentence_strings()
+        strings = csdata.create_sentence_strings()
         assert len(strings) == len(csdata.sentences)
 
 
@@ -78,7 +78,7 @@ class TestSentenceProcessing:
     def test_edit_distance(self):
         adata = sc.read_csv(HERE / 'small_data.csv').T
         csdata = cs.transforms.csdata_from_adata(adata)
-        mat = csdata.distance_matrix(dist_type='levenshtein')
+        mat = csdata.create_distance_matrix(dist_type='levenshtein')
         assert mat[3, 4] > mat[3, 3]
         assert mat[3, 4] == mat[4, 3]
 
