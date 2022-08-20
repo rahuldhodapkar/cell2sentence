@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from tqdm import tqdm
+import igraph as ig
 
 from .utils import zlib_ncd
 
@@ -27,6 +28,7 @@ class CSData():
         self.feature_names = feature_names
         self.distance_matrix = None
         self.distance_params = None
+        self.knn_graph = None
 
     def create_distance_matrix(self, dist_type='zlib_ncd', prefix_len=100):
         """
@@ -74,7 +76,38 @@ class CSData():
             'prefix_len': prefix_len
         }
         self.distance_matrix = mat
+        # reset KNN graph if previously computed on old distance
+        self.knn_graph = None
+
         return self.distance_matrix
+
+    def build_knn_graph(self, k=15):
+        """
+        Create KNN graph
+        """
+        if self.distance_matrix is None:
+            raise RuntimeError(
+                'cannot "build_knn_graph" without running "create_distance_matrix" first')
+
+        adj_matrix = 1 / (1 + self.distance_matrix)
+        knn_mask = np.zeros(shape=adj_matrix.shape)
+
+        for i in range(adj_matrix.shape[0]):
+            for j in np.argsort(-adj_matrix[i])[:k]:
+                knn_mask[i, j] = 1
+
+        masked_adj_matrix = knn_mask * adj_matrix
+
+        self.knn_graph = ig.Graph.Weighted_Adjacency(masked_adj_matrix)
+        return self.knn_graph
+
+    def find_clusters(self, method='leiden'):
+        """
+        Performs cell clustering using the computed distance matrix. Currently supported methods:
+        ('leiden')
+        """
+
+
 
     def find_differential_features(self, sentence_ixs_1, sentence_ixs_2=None):
         """

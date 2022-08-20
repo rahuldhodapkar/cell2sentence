@@ -65,6 +65,28 @@ class TestDataReading:
         assert np.mean(ranks_g1) < 0.6
         assert np.mean(ranks_g1) > 0.4
 
+class TestCoreWorkflow:
+    def test_edit_distance(self):
+        adata = sc.read_csv(HERE / 'small_data.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata)
+        mat = csdata.create_distance_matrix(dist_type='levenshtein')
+        assert mat[3, 4] > mat[3, 3]
+        assert mat[3, 4] == mat[4, 3]
+
+    def test_knn_graph_generation(self):
+        adata = sc.read_csv(HERE / 'small_data.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata)
+        csdata.create_distance_matrix(dist_type='levenshtein')
+        csdata.build_knn_graph(k=15)
+        assert csdata.knn_graph is not None
+
+    def test_rank_extraction(self):
+        adata = sc.read_csv(HERE / 'small_data.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata)
+        rank_vec = csdata.get_rank_data_for_feature('g3')
+        assert rank_vec[0] == 1
+        assert rank_vec[1] == 2
+        assert math.isnan(rank_vec[2])
 
 class TestSentenceSeralization:
     def test_gen_sentence_strings(self):
@@ -74,20 +96,4 @@ class TestSentenceSeralization:
         assert len(strings) == len(csdata.sentences)
 
 
-class TestSentenceProcessing:
-    def test_edit_distance(self):
-        adata = sc.read_csv(HERE / 'small_data.csv').T
-        csdata = cs.transforms.csdata_from_adata(adata)
-        mat = csdata.create_distance_matrix(dist_type='levenshtein')
-        assert mat[3, 4] > mat[3, 3]
-        assert mat[3, 4] == mat[4, 3]
 
-
-class TestRankExtraction:
-    def test_rank_extraction(self):
-        adata = sc.read_csv(HERE / 'small_data.csv').T
-        csdata = cs.transforms.csdata_from_adata(adata)
-        rank_vec = csdata.get_rank_data_for_feature('g3')
-        assert rank_vec[0] == 1
-        assert rank_vec[1] == 2
-        assert math.isnan(rank_vec[2])

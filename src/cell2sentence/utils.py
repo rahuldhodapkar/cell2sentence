@@ -8,6 +8,7 @@ Utility functions for cell2sentence
 
 import zlib
 
+
 def zlib_ncd(s1, s2):
     """
     Return the zlib normalized compression distance between two strings
