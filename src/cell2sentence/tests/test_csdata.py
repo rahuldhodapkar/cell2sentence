@@ -48,6 +48,13 @@ class TestDataReading:
         merged_csdata = cs.transforms.merge_csdata([csdata1, csdata2])
         assert_vocab_correct(merged_csdata)
 
+    def test_prefix_feature(self):
+        adata = sc.read_csv(HERE / 'small_data_diffgenes.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata, prefix_len=2)
+        assert len(csdata.sentences[1]) == 2
+        csdata = cs.transforms.csdata_from_adata(adata)
+        assert len(csdata.sentences[1]) == 3
+
     def test_random_tiebreaks(self):
         X = np.array([[1, 1, 0],
                       [2, 2, 3]], dtype=np.int64)

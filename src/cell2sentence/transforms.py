@@ -87,7 +87,7 @@ def generate_vocabulary(adata):
     return vocabulary
 
 
-def generate_sentences(adata, random_state=42):
+def generate_sentences(adata, prefix_len=None, random_state=42):
     """
     Transform expression matrix to sentences. Sentences contain gene "words"
     denoting genes with non-zero expression. Genes are ordered from highest
@@ -119,23 +119,28 @@ def generate_sentences(adata, random_state=42):
         sentences.append(
             ''.join([chr(x) for x in cols[np.argsort(-vals, kind='stable')]]))
 
+    if prefix_len is not None:
+        sentences = [s[:prefix_len] for s in sentences]
+
     return np.array(sentences, dtype=object)
 
 
-def csdata_from_adata(adata, random_state=42):
+def csdata_from_adata(adata, prefix_len=None, random_state=42):
     """
     Generate a CSData object from an AnnData object.
 
     Arguments:
         adata: an AnnData object to generate cell sentences from. Expects that
                `obs` correspond to cells and `vars` correspond to genes.
+        prefix_len: consider only rank substrings of length prefix_len
         random_state: sets the numpy random state for splitting ties
     Return:
         a CSData object containing a vocabulary, sentences, and associated name data.
     """
     return CSData(
         vocab=generate_vocabulary(adata),
-        sentences=generate_sentences(adata, random_state),
+        sentences=generate_sentences(adata,
+            prefix_len=prefix_len, random_state=random_state),
         cell_names=adata.obs_names,
         feature_names=adata.var_names
     )
