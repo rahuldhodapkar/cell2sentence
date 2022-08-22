@@ -49,13 +49,15 @@ plt.scatter(
     s=1)
 plt.show()
 
-
 # (7) identify differential genes for each cluster.
-
-c1_diff = csdata.find_differential_features(
+diff_df = csdata.find_differential_features(
     ident_1 = [i for i, x in enumerate(clustering.membership) if x == 1]
 )
 
+
+diff_df = csdata.find_differential_features(
+    ident_1 = [i for i, x in enumerate(clustering.membership) if x == 1]
+)
 
 clustering = csdata.knn_graph.community_leiden(
     objective_function='modularity')
