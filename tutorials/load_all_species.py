@@ -19,7 +19,7 @@ import anndata
 import cell2sentence as cs
 import scanpy as sc
 
-species_tags = ['human', 'mouse', 'chick', 'zebrafish']
+species_tags = ['human', 'zebrafish']
 data_dir = './data'
 outpath = './calc/xlm_outpath'
 
@@ -78,8 +78,7 @@ read_funcs = {
     'zebrafish': read_mtx_sample
 }
 
-merged_vocab = {} # a single vocabulary file is required for XLM
-
+csdata_lst = [] # collect names to single vocabulary file
 for tag in species_tags:
     print("INFO: loading data for species [{}]".format(tag))
     adata_objs = []
@@ -89,27 +88,21 @@ for tag in species_tags:
     print("INFO: joining data for species [{}]".format(tag))
     adata_combined = anndata.concat(adata_objs, axis=0)
     print("INFO: generating sentences for species [{}]".format(tag))
-    sentences = cs.transforms.generate_sentences(adata_combined)
-    print("INFO: building vocabulary for species [{}]".format(tag))
-    vocab = cs.transforms.generate_vocabulary(adata_combined)
-    merged_vocab.update(vocab)
-    print("INFO: formatting for XLM integration for species [{}]".format(tag))
-    train, test, val = cs.transforms.train_test_validation_split(
-        sentences, train_pct=0.8, test_pct=0.1, val_pct=0.1)
+    csdata_combined = cs.transforms.csdata_from_adata(adata_combined, prefix_len=20)
     cs.integrations.xlm_prepare_outpath(
-        outpath=outpath, species_tag=tag,
-        vocab=vocab,
-        train_sentences=train,
-        test_sentences=test,
-        val_sentences=val)
+        csdata_combined,
+        outpath=outpath,
+        species_tag=tag)
+    csdata_lst.append(csdata_combined)
     print("INFO: species [{}] complete".format(tag))
 
 print("INFO: saving merged vocabulary file")
+csdata_merged = cs.transforms.merge_csdata(csdata_lst)
+merged_vocab = csdata_merged.vocab
 with open('{}/vocab'.format(outpath), 'w') as f:
     for k in tqdm(sorted(merged_vocab, key=merged_vocab.get, reverse=True)):
         if merged_vocab[k] == 0:
             continue
         print("{} {}".format(k, merged_vocab[k]), file=f)
-
 
 print("All done!")

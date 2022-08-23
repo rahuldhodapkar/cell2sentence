@@ -98,3 +98,19 @@ Files used in prototyping:
 
 NOTE that after untar'ing this file, it contains several individual sequence
 files, which are used separately for corpus generation 
+
+# Validation Data
+## Human Cell Atlas Retina
+[Download Link](https://singlecell.broadinstitute.org/single_cell/study/SCP737/hca-wongadultretina-retina-cumulus#study-download)
+[Manuscript Link](https://www.embopress.org/doi/full/10.15252/embj.2018100811#:~:text=The%20transcriptome%20of%20human%20neural,cells%20or%20primary%20retinal%20cells.)
+
+Files used in prototyping:
+- `output.scp.matrix.mtx`
+- `output.scp.features.tsv`
+- `output.scp.barcodes.tsv`
+
+We also get the cell type annotations from the human cell atlas data portal [here](https://data.humancellatlas.org/explore/projects/8185730f-4113-40d3-9cc3-929271784c2b/project-matrices)
+from where we download the `WongRetinaCelltype.csv` file containing cell barcode to celltype mappings.
+
+
+

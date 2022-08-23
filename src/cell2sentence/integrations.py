@@ -43,7 +43,7 @@ def xlm_prepare_outpath(csdata,
     if params is None:
         params = {}
 
-    sentence_strings = csdata.generate_sentence_strings(delimiter=' ')
+    sentence_strings = csdata.create_sentence_strings(delimiter=' ')
 
     train_sentences, test_sentences, val_sentences = \
         train_test_validation_split(sentence_strings, **params)

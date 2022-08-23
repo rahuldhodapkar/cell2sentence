@@ -25,7 +25,7 @@ adata = sc.read_10x_mtx(
 csdata = cs.transforms.csdata_from_adata(adata)
 
 # (3) generate edit distance matrix
-dist = csdata.create_distance_matrix(dist_type='jaro', prefix_len=25)
+dist = csdata.create_distance_matrix(dist_type='damerau_levenshtein', prefix_len=10)
 
 # (4) create weighted k nearest neighbors graph
 csdata.create_knn_graph(k=15)
@@ -41,12 +41,14 @@ reducer = umap.UMAP(metric='precomputed', n_components=2)
 embedding = reducer.fit_transform(dist)
 
 # (6) visualize clusters on embedding
-plt.scatter(
+scatterplot = plt.scatter(
     embedding[:, 0],
     embedding[:, 1],
     c=clustering.membership,
     plotnonfinite = True,
     s=1)
+plt.legend(*scatterplot.legend_elements(),
+            loc="lower right", title="Clusters")
 plt.show()
 
 # (7) identify differential genes for each cluster.
@@ -66,16 +68,18 @@ clustering = csdata.knn_graph.community_walktrap().as_clustering()
 
 
 # (7) plot characteristic gene expression by rank
-cmap = mpl.cm.get_cmap("jet").copy()
+cmap = mpl.cm.get_cmap("viridis").copy()
 cmap.set_bad('gray', 0.7)
 
-plt.scatter(
+scatterplot = plt.scatter(
     embedding[:, 0],
     embedding[:, 1],
     c=csdata.get_rank_data_for_feature('PPBP', invert=True),
     cmap = cmap,
     plotnonfinite = True,
     s=1)
+plt.legend(*scatterplot.legend_elements(),
+            loc="lower right", title="Clusters")
 plt.show()
 
 plt.scatter(
@@ -94,6 +98,8 @@ plt.scatter(
     cmap = cmap,
     plotnonfinite = True,
     s=1.5)
+plt.legend(*scatterplot.legend_elements(),
+            loc="lower right", title="Clusters")
 plt.show()
 
 plt.scatter(
