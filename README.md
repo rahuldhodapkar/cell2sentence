@@ -41,6 +41,9 @@ Files used in prototyping:
 - `GSE148077_count_mat_donor_H5.csv.gz`
 - `GSE148077_count_mat_donor_H9.csv.gz`
 
+For validations, we also use:
+- `Human_retina_combined_all_meta.csv`
+
 ### Chick Retina Atlas
 [Manuscript Link](https://pubmed.ncbi.nlm.nih.gov/33393903/)
 [Download Data Link](https://singlecell.broadinstitute.org/single_cell/study/SCP1159/a-cell-atlas-of-the-chick-retina-based-on-single-cell-transcriptomics#study-download)

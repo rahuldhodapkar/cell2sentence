@@ -17,49 +17,11 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 from scipy import sparse
-from sklearn import model_selection
 from sklearn.utils import shuffle
 
 from tqdm import tqdm
 
 from .csdata import CSData
-
-
-def train_test_validation_split(sentences,
-                                train_pct=0.8,
-                                test_pct=0.1,
-                                val_pct=0.1,
-                                random_state=42):
-    """
-    Create train, test, and validation splits of the data given the supplied
-    percentages with a specified random state for reproducibility.
-
-    Arguments:
-        sentences: an numpy.ndarray of sentences to be split.
-        train_pct: Default = 0.6. the percentage of samples to assign to the training set.
-        test_pct: Default = 0.2. the percentage of samples to assign to the test set.
-        val_pct: Default = 0.2. the percentage of samples to assign to the validation set.
-    Return:
-        (train_sentences, test_sentences, val_sentences) split from the
-        originally supplied sentences array.
-    """
-    if train_pct + test_pct + val_pct != 1:
-        raise ValueError(
-            'train_pct = {} + test_pct = {} + val_pct = {} do not sum to 1.'.format(
-                train_pct, test_pct, val_pct))
-
-    s_1 = test_pct
-    s_2 = val_pct / (1 - test_pct)
-
-    X = range(len(sentences))
-    X_train, X_test = model_selection.train_test_split(
-        X, test_size=s_1, random_state=random_state)
-
-    X_train, X_val = model_selection.train_test_split(
-        X_train, test_size=s_2, random_state=random_state)
-
-    return (sentences[X_train], sentences[X_test], sentences[X_val])
-
 
 def generate_vocabulary(adata):
     """

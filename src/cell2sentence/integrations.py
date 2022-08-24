@@ -10,9 +10,6 @@ import os
 import sys
 from tqdm import tqdm
 
-from .transforms import train_test_validation_split
-
-
 def xlm_prepare_outpath(csdata,
                         outpath,
                         species_tag,
@@ -45,14 +42,17 @@ def xlm_prepare_outpath(csdata,
 
     sentence_strings = csdata.create_sentence_strings(delimiter=' ')
 
-    train_sentences, test_sentences, val_sentences = \
-        train_test_validation_split(sentence_strings, **params)
+    train, test, val = csdata.train_test_validation_split(**params)
+
+    train_sentences = sentence_strings[train]
+    test_sentences = sentence_strings[test]
+    val_sentences = sentence_strings[val]
 
     os.makedirs(outpath, exist_ok=True)
 
     print("INFO: Writing Vocabulary File", file=sys.stderr)
-    vocab_fn = "{}/vocab_{}".format(outpath, species_tag)
-    with open(vocab_fn, 'w') as f:
+    fn = "{}/vocab_{}".format(outpath, species_tag)
+    with open(fn, 'w') as f:
         for k in tqdm(
             sorted(
                 csdata.vocab,
@@ -63,19 +63,37 @@ def xlm_prepare_outpath(csdata,
             print("{} {}".format(k, csdata.vocab[k]), file=f)
 
     print("INFO: Writing Training Sentences", file=sys.stderr)
-    train_fn = "{}/train.{}".format(outpath, species_tag)
-    with open(train_fn, 'w') as f:
+    fn = "{}/train.{}".format(outpath, species_tag)
+    with open(fn, 'w') as f:
         for l in tqdm(train_sentences):
             print(l, file=f)
 
+    print("INFO: Writing Training Cell Barcodes", file=sys.stderr)
+    fn = "{}/train_barcodes.{}".format(outpath, species_tag)
+    with open(fn, 'w') as f:
+        for l in tqdm(csdata.cell_names[train]):
+            print(l, file=f)
+
     print("INFO: Writing Testing Sentences", file=sys.stderr)
-    test_fn = "{}/test.{}".format(outpath, species_tag)
-    with open(test_fn, 'w') as f:
+    fn = "{}/test.{}".format(outpath, species_tag)
+    with open(fn, 'w') as f:
         for l in tqdm(test_sentences):
             print(l, file=f)
 
+    print("INFO: Writing Testing Cell Barcodes", file=sys.stderr)
+    fn = "{}/train_barcodes.{}".format(outpath, species_tag)
+    with open(fn, 'w') as f:
+        for l in tqdm(csdata.cell_names[test]):
+            print(l, file=f)
+
     print("INFO: Writing Validation Sentences", file=sys.stderr)
-    val_fn = "{}/valid.{}".format(outpath, species_tag)
-    with open(val_fn, 'w') as f:
+    fn = "{}/valid.{}".format(outpath, species_tag)
+    with open(fn, 'w') as f:
         for l in tqdm(val_sentences):
+            print(l, file=f)
+
+    print("INFO: Writing Validation Cell Barcodes", file=sys.stderr)
+    fn = "{}/valid_barcodes.{}".format(outpath, species_tag)
+    with open(fn, 'w') as f:
+        for l in tqdm(csdata.cell_names[val]):
             print(l, file=f)
