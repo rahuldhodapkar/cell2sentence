@@ -85,10 +85,11 @@ plt.show()
 plt.scatter(
     embedding[:, 0],
     embedding[:, 1],
-    c=csdata.get_rank_data_for_feature('CD3E', invert=True),
+    c=csdata.get_rank_data_for_feature('LYZ', invert=True),
     cmap = cmap,
     plotnonfinite = True,
     s=1.5)
+plt.legend()
 plt.show()
 
 plt.scatter(
@@ -137,7 +138,5 @@ plt.scatter(
     plotnonfinite = True,
     s=1.5)
 plt.show()
-
-
 
 
