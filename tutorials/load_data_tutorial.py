@@ -21,11 +21,15 @@ adata = sc.read_10x_mtx(
     var_names='gene_symbols',
     cache=True)
 
+# extract highly variable genes
+sc.pp.highly_variable_genes(adata, n_top_genes=2000, flavor='seurat_v3')
+adata_hvg = adata[:,adata.var.highly_variable]
+
 # (2) convert to sentence format
-csdata = cs.transforms.csdata_from_adata(adata)
+csdata = cs.transforms.csdata_from_adata(adata_hvg)
 
 # (3) generate edit distance matrix
-dist = csdata.create_distance_matrix(dist_type='damerau_levenshtein', prefix_len=10)
+dist = csdata.create_distance_matrix(dist_type='damerau_levenshtein', prefix_len=20)
 
 # (4) create weighted k nearest neighbors graph
 csdata.create_knn_graph(k=15)
@@ -61,10 +65,10 @@ diff_df = csdata.find_differential_features(
     ident_1 = [i for i, x in enumerate(clustering.membership) if x == 1]
 )
 
-clustering = csdata.knn_graph.community_leiden(
-    objective_function='modularity')
-clustering = csdata.knn_graph.community_spinglass()
-clustering = csdata.knn_graph.community_walktrap().as_clustering()
+#clustering = csdata.knn_graph.community_leiden(
+#    objective_function='modularity')
+#clustering = csdata.knn_graph.community_spinglass()
+#clustering = csdata.knn_graph.community_walktrap().as_clustering()
 
 
 # (7) plot characteristic gene expression by rank
