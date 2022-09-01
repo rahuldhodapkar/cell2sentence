@@ -12,11 +12,17 @@ import os
 from pathlib import Path
 import re
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
 
 import anndata
 import cell2sentence as cs
 import scanpy as sc
+
+import matplotlib.pyplot as plt
+import plotnine as pn
+
+import umap
 
 species_tags = ['human']
 data_dir = './data'
@@ -117,7 +123,6 @@ embedding = reducer.fit_transform(dist)
 scatterplot = plt.scatter(
     embedding[:, 0],
     embedding[:, 1],
-    c=clustering.membership,
     plotnonfinite = True,
     s=1)
 plt.legend(*scatterplot.legend_elements(),
