@@ -125,8 +125,6 @@ scatterplot = plt.scatter(
     embedding[:, 1],
     plotnonfinite = True,
     s=1)
-plt.legend(*scatterplot.legend_elements(),
-            loc="lower right", title="Clusters")
 plt.show()
 
 

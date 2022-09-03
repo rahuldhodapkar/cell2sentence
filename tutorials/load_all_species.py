@@ -19,6 +19,8 @@ import anndata
 import cell2sentence as cs
 import scanpy as sc
 
+import numpy as np
+
 species_tags = ['human', 'mouse', 'zebrafish', 'chick']
 data_dir = './data'
 outpath = './calc/xlm_outpath'
@@ -89,6 +91,9 @@ for tag in species_tags:
     adata_combined = anndata.concat(adata_objs, axis=0)
     sc.pp.highly_variable_genes(adata_combined, n_top_genes=2000, flavor='seurat_v3')
     adata_hvg = adata_combined[:,adata_combined.var.highly_variable]
+    print("INFO: Saving combined matrix for species [{}]".format(tag))
+    save_df = adata_combined[:,adata_combined.var.highly_variable].to_df()
+    save_df.to_csv('{}/{}_hvg_expression.csv'.format(outpath, tag))
     print("INFO: generating sentences for species [{}]".format(tag))
     csdata_combined = cs.transforms.csdata_from_adata(adata_hvg, prefix_len=30)
     cs.integrations.xlm_prepare_outpath(
