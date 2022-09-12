@@ -54,6 +54,22 @@ Files used in prototyping:
 - `GSE159107_E12chick_count.matrix.csv.gz`
 - `GSE159107_E16chick_count.matrix.csv.gz`
 - `GSE159107_E18chick_count.matrix.csv.gz`
+- `Chick_retina_atlas_meta.csv`
+
+### Macaque Foveal and Peripheral Retina
+[Manuscript Link](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6424338/)
+[Download Data Link](https://singlecell.broadinstitute.org/single_cell/study/SCP212/molecular-specification-of-retinal-cell-types-underlying-central-and-peripheral-vision-in-primates#study-download)
+
+Not yet used or downloaded, but could represent an interesting close relative to compare with human for
+cross species translation prototyping.
+
+Files used in prototyping:
+- `Macaque_fov_AC_expression2.txt`
+- `Macaque_fov_BC_expression.txt`
+- `Macaque_fov_EpiImmune_expression.txt`
+- `Macaque_fov_HC_expression.txt`
+- `Macaque_fov_PR_expression.txt`
+- `Macaque_fov_RGC_expression.txt`
 
 ## GEO Datasets
 ### Mouse Developmental Retina
@@ -64,6 +80,7 @@ Files used in prototyping:
 - `GSE118614_10x_aggregate.mtx.gz`
 - `GSE118614_barcodes.tsv.gz`
 - `GSE118614_genes.tsv.gz`
+- `GSE118614_barcodes.tsv.gz`
 
 NOTE that the genes and barcodes files available were not in the correct
 formats, and needed to be cleaned with the following commands.  First move

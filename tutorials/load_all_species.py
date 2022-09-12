@@ -21,7 +21,10 @@ import scanpy as sc
 
 import numpy as np
 
-species_tags = ['human', 'mouse', 'zebrafish', 'chick']
+
+#species_tags = ['human', 'mouse', 'chick', 'zebrafish', 'macaque']
+species_tags = ['macaque']
+
 data_dir = './data'
 outpath = './calc/xlm_outpath'
 
@@ -37,7 +40,8 @@ samples_to_process = {
     'human': enum_csv_samples(data_dir, 'human'),
     'chick': enum_csv_samples(data_dir, 'chick'),
     'mouse': enum_mtx_samples(data_dir, 'mouse'),
-    'zebrafish': enum_mtx_samples(data_dir, 'zebrafish')
+    'zebrafish': enum_mtx_samples(data_dir, 'zebrafish'),
+    'macaque': enum_csv_samples(data_dir, 'macaque')
 }
 
 def read_csv_sample(s):
@@ -77,7 +81,8 @@ read_funcs = {
     'human': read_csv_sample,
     'chick': read_csv_sample,
     'mouse': read_mtx_sample,
-    'zebrafish': read_mtx_sample
+    'zebrafish': read_mtx_sample,
+    'macaque': read_csv_sample
 }
 
 csdata_lst = [] # collect names to single vocabulary file

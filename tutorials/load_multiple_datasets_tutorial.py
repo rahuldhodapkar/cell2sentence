@@ -30,7 +30,7 @@ import cell2sentence as cs
 import scanpy as sc
 import scanpy.external as sce
 
-species_tags = ['human', 'mouse', 'chick', 'zebrafish']
+species_tags = ['human', 'mouse', 'chick', 'zebrafish', 'macaque']
 data_dir = './data'
 outpath = './calc'
 
