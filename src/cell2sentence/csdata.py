@@ -31,7 +31,7 @@ class CSData():
         self.distance_params = None
         self.knn_graph = None
 
-    def create_distance_matrix(self, dist_type='zlib_ncd', prefix_len=100):
+    def create_distance_matrix(self, dist_type='jaro', prefix_len=20):
         """
         Calculate the distance matrix for the CSData object with the specified
         edit distance method. Currently supported: ("levenshtein").
@@ -102,7 +102,6 @@ class CSData():
         self.knn_graph = ig.Graph.Weighted_Adjacency(masked_adj_matrix).as_undirected()
         return self.knn_graph
 
-
     def create_rank_matrix(self):
         """
         Generates a per-cell rank matrix for use with matrix-based tools. Features with zero
@@ -116,7 +115,6 @@ class CSData():
                 full_rank_matrix[i, ord(c)] = len(s) - rank_position
 
         return full_rank_matrix
-
 
     def find_differential_features(self, ident_1, ident_2=None, min_pct=0.1):
         """
@@ -194,6 +192,21 @@ class CSData():
             joined_sentences.append(delimiter.join(
                 [enc_map[ord(x)] for x in s]
             ))
+
+        return np.array(joined_sentences, dtype=object)
+
+    def create_sentence_lists(self):
+        """
+        Convert internal sentence representation (arrays of ints) to
+        sentence lists compatible with gensim
+        """
+        enc_map = list(self.vocab.keys())
+
+        joined_sentences = []
+        for s in self.sentences:
+            joined_sentences.append(
+                [enc_map[ord(x)] for x in s]
+            )
 
         return np.array(joined_sentences, dtype=object)
 

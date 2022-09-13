@@ -1,30 +1,31 @@
 #!/usr/bin/env python
-## load_all_species.py
+## data_integration.py
 #
-# More representative script to load a series of experiments for different
-# species and create a combined multilingual training dataset formatted for
-# direct input into XLM.
+# compare data integration with cell2sentence against default
 #
 # @author Rahul Dhodapkar <rahul.dhodapkar@yale.edu>
 #
+
 
 import sys
 import os
 from pathlib import Path
 import re
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
 
 import anndata
 import cell2sentence as cs
 import scanpy as sc
 
-import numpy as np
+import matplotlib.pyplot as plt
+import plotnine as pn
 
+import umap
 
 #species_tags = ['human', 'mouse', 'chick', 'zebrafish', 'macaque']
 species_tags = ['macaque']
-
 data_dir = './data'
 outpath = './calc/xlm_outpath'
 
@@ -86,6 +87,7 @@ read_funcs = {
 }
 
 csdata_lst = [] # collect names to single vocabulary file
+adata_lst = []
 for tag in species_tags:
     print("INFO: loading data for species [{}]".format(tag))
     adata_objs = []
@@ -96,9 +98,6 @@ for tag in species_tags:
     adata_combined = anndata.concat(adata_objs, axis=0)
     sc.pp.highly_variable_genes(adata_combined, n_top_genes=2000, flavor='seurat_v3')
     adata_hvg = adata_combined[:,adata_combined.var.highly_variable]
-    print("INFO: Saving combined matrix for species [{}]".format(tag))
-    save_df = adata_combined[:,adata_combined.var.highly_variable].to_df()
-    save_df.to_csv('{}/{}_hvg_expression.csv'.format(outpath, tag))
     print("INFO: generating sentences for species [{}]".format(tag))
     csdata_combined = cs.transforms.csdata_from_adata(adata_hvg, prefix_len=30)
     cs.integrations.xlm_prepare_outpath(
@@ -106,15 +105,30 @@ for tag in species_tags:
         outpath=outpath,
         species_tag=tag)
     csdata_lst.append(csdata_combined)
+    adata_lst.append(adata_combined)
     print("INFO: species [{}] complete".format(tag))
 
-print("INFO: saving merged vocabulary file")
-csdata_merged = cs.transforms.merge_csdata(csdata_lst)
-merged_vocab = csdata_merged.vocab
-with open('{}/vocab'.format(outpath), 'w') as f:
-    for k in tqdm(sorted(merged_vocab, key=merged_vocab.get, reverse=True)):
-        if merged_vocab[k] == 0:
-            continue
-        print("{} {}".format(k, merged_vocab[k]), file=f)
+'''
+# plot data integration using cell2sentence
+csdata = csdata_lst[0]
 
-print("All done!")
+# (3) generate edit distance matrix
+dist = csdata.create_distance_matrix(dist_type='damerau_levenshtein', prefix_len=10)
+
+# (4) create weighted k nearest neighbors graph
+csdata.create_knn_graph(k=15)
+clustering = csdata.knn_graph.community_multilevel()
+
+# (5) compute UMAP embedding from distance matrix for visualization
+reducer = umap.UMAP(metric='precomputed', n_components=2)
+embedding = reducer.fit_transform(dist)
+
+# (6) visualize clusters on embedding
+scatterplot = plt.scatter(
+    embedding[:, 0],
+    embedding[:, 1],
+    plotnonfinite = True,
+    s=1)
+plt.show()
+'''
+

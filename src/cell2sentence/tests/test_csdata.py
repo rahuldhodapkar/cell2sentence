@@ -114,5 +114,10 @@ class TestSentenceSeralization:
         strings = csdata.create_sentence_strings()
         assert len(strings) == len(csdata.sentences)
 
-
+    def test_gen_sentence_lists(self):
+        adata = sc.read_csv(HERE / 'small_data.csv').T
+        csdata = cs.transforms.csdata_from_adata(adata)
+        sentences = csdata.create_sentence_lists()
+        assert len(sentences) == len(csdata.sentences)
+        assert len(sentences[0]) == 1
 
