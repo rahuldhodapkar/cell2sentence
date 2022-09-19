@@ -51,5 +51,5 @@ which simply uses `pip -e`.
 
 ## Loading Data
 
-All data used in the bioRxiv manuscript is publicly available, and details
+All data used in the bioRxiv manuscript are publicly available, and details
 are outlined in the [`DATA.md`](DATA.md) file in this repository.

@@ -5,7 +5,7 @@
 # @author Rahul Dhodapkar <rahul.dhodapkar@yale.edu>
 #
 
-.PHONY: install test lint autopep
+.PHONY: install test lint autopep build distribute-test distribute
 
 install:
 	echo "Installing locally using setup.py"
@@ -19,3 +19,12 @@ lint:
 
 autopep:
 	autopep8 --recursive --in-place --aggressive --aggressive src
+
+build:
+	python -m build
+
+distribute-test:
+	python -m twine upload --repository testpypi dist/*
+
+distribute:
+	python -m twine upload dist/*
