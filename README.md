@@ -2,7 +2,10 @@
 
 ![cell2sentence workflow image](c2s_overview.png)
 
-Reframing cells as sentences of genes, ordered by expression.
+Reframing cells as sentences of genes, ordered by expression. Please
+read the manuscript on bioRxiv for methodological details and examples.
+
+(https://www.biorxiv.org/content/10.1101/2022.09.18.508438)
 
 ## Stable Setup
 
@@ -40,3 +43,8 @@ running
     make install
 
 which simply uses `pip -e`.
+
+## Loading Data
+
+All data used in the bioRxiv manuscript is publicly available, and details
+are outlined in the [`DATA.md`](DATA.md) file in this repository.
