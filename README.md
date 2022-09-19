@@ -26,6 +26,11 @@ and generate a list of cell sentences with:
 
     sentences = csdata.create_sentence_lists()
 
+A tutorial script showing how to use pretrained word vectors to analyze
+the `pbmc3k` dataset used by Seurat and scanpy in their guided clustering
+tutorials is available at 
+[`tutorials/pbmc3k_cell_sentences.py`](tutorials/pbmc3k_cell_sentences.py)
+
 ## Development Setup
 
 Create a conda environment using `python3` using 
