@@ -27,9 +27,21 @@ class CSData():
         self.data_path_format = data_path_format # support plaintext and arrow
 
     def __str__(self):
+        """
+        Summarize CSData object as string for debugging and logging.
+        """
         return "CSData Object; Path={}, Format={}".format(
             self.data_path,
             self.data_path_format)
+
+    def to_plain_text(self, output_path):
+        """
+        Print data represented by CSData to a plain text file
+        Arguments:
+            output_path: a string representing the path to which the output file
+                         should be written.
+        """
+        return None
 
     @classmethod
     def from_adata(cls, adata):
