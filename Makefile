@@ -2,7 +2,7 @@
 #
 # Development scripts for cell2sentence
 #
-# @author Rahul Dhodapkar <rahul.dhodapkar@yale.edu>
+# @author Rahul Dhodapkar
 #
 
 .PHONY: install test lint autopep build distribute-test distribute
