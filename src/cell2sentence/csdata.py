@@ -31,9 +31,7 @@ class CSData():
         """
         Summarize CSData object as string for debugging and logging.
         """
-        return "CSData Object; Path={}, Format={}".format(
-            self.data_path,
-            self.data_path_format)
+        return f"CSData Object; Path={self.data_path}, Format={self.data_path_format}"
 
     def to_plain_text(self, output_path):
         """
