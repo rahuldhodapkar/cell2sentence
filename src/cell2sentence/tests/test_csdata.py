@@ -15,10 +15,12 @@ import pytest
 
 HERE = Path(__file__).parent
 
+
 class TestDataReading:
     def test_read_adata(self):
         adata = sc.read_csv(HERE / 'small_data.csv').T
         assert adata.shape == (5, 3)
+
 
 class TestCoreWorkflow:
     def test_adata_to_csdata_generation(self):
