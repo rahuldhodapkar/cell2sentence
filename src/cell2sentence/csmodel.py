@@ -3,7 +3,7 @@ Main model wrapper class definition
 """
 
 #
-# @author Rahul Dhodapkar
+# @authors: Rahul Dhodapkar, Syed Rizvi
 #
 
 
