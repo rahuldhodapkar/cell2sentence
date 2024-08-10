@@ -8,6 +8,11 @@ Main model wrapper class definition
 
 from datasets import load_from_disk
 
+SUPPORTED_TASKS = [
+    "cell_type_classification",
+    "cell_type_generation",
+]
+
 
 class CSModel():
     """
@@ -27,7 +32,7 @@ class CSModel():
         """
         return f"CSModel Object; Path={self.model_path}"
 
-    def fine_tune(self, csdata):
+    def fine_tune(self, csdata, task: str, top_k_genes: int = 100):
         """
         Fine tune a model using the provided CSData object data
 
@@ -36,13 +41,24 @@ class CSModel():
                     alternatively, data can be any generator of sequential
                     text that satisfies the same functional contract as
                     a CSData object.
+            task: finetuning task (currently supported; cell_type_classification 
+                    and cell_type_generation)
+            top_k_genes: number of genes to use for each cell sentence
         Return:
             None: an updated CSModel is generated in-place
         """
+        assert task in SUPPORTED_TASKS, "Specified finetuning task is not yet supported."
+
+        # Load data from csdata object
         if csdata.data_path_format == "arrow":
             hf_ds_dict = load_from_disk(csdata.data_path)
         else:
             raise NotImplementedError("Please use arrow backend implementation for training")
+        
+        # Define formatter to format prompts
+        prompt_formatter = PromptFormatter(task=task, top_k_genes=top_k_genes)
+        hf_ds_dict = prompt_formatter.format_prompts(hf_ds_dict)
+
 
         # TODO/To think about:
         # There might be many ways for people to finetune, e.g. for generation or classification, etc.
