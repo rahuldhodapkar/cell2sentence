@@ -134,15 +134,3 @@ class CSData():
         Summarize CSData object as string for debugging and logging.
         """
         return f"CSData Object; Path={self.data_path}, Format={self.dataset_backend}"
-
-
-# Debugging
-if __name__ == "__main__":
-    from pathlib import Path
-    import scanpy as sc
-
-    HERE = Path(__file__).parent
-    adata = sc.read_csv(HERE / 'tests/small_data.csv').T
-    csdata = CSData.from_adata(adata, save_path="/home/sr2464/palmer_scratch/C2S_Files_Syed/c2s_api_testing")
-    cell_sentences = csdata.get_sentence_strings()
-    print(csdata)

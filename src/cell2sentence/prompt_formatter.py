@@ -7,6 +7,7 @@ Prompt formatting class definition.
 #
 
 import json
+from pathlib import Path
 from datasets import DatasetDict
 
 HERE = Path(__file__).parent
@@ -141,3 +142,39 @@ class PromptFormatter():
             "test": formatted_test_ds,
         })
         return formatted_hf_ds_dict
+
+
+# Debugging
+if __name__ == "__main__":
+    from pathlib import Path
+    import scanpy as sc
+    import cell2sentence as cs
+    from datasets import load_from_disk
+
+    HERE = Path(__file__).parent
+    # Read in data
+    adata = sc.read_h5ad(HERE / 'tests/immune_tissue_10cells.h5ad')
+    save_dir = "/home/sr2464/palmer_scratch/C2S_Files_Syed/c2s_api_testing"
+    save_name = "immune_tissue_10cells_csdata_arrow"
+    
+    # Define columns of adata.obs which we want to keep in cell sentence dataset
+    adata_obs_cols_to_keep = ["cell_type", "tissue", "batch_condition", "organism"]
+    
+    # Create CSData object
+    csdata = cs.CSData.from_adata(
+        adata,
+        save_dir=save_dir,
+        save_name=save_name,
+        dataset_backend="arrow",
+        sentence_delimiter=" ",
+        label_col_names=adata_obs_cols_to_keep
+    )
+
+    hf_ds_dict = load_from_disk(csdata.data_path)
+
+    task = "cell_type_prediction"
+    top_k_genes = 10  # up to 10 genes
+    prompt_formatter = PromptFormatter(task=task, top_k_genes=top_k_genes)
+
+    hf_ds_dict = prompt_formatter.format_prompts_for_dataset_dict(hf_ds_dict)
+    print("Done.")
