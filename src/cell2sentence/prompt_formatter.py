@@ -172,7 +172,7 @@ if __name__ == "__main__":
 
     hf_ds_dict = load_from_disk(csdata.data_path)
 
-    task = "cell_type_prediction"
+    task = "cell_type_generation"
     top_k_genes = 10  # up to 10 genes
     prompt_formatter = PromptFormatter(task=task, top_k_genes=top_k_genes)
 
