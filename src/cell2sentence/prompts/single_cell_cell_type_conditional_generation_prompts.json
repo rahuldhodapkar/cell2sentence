@@ -12,6 +12,6 @@
         "Assemble a list of {num_genes} genes from highest to lowest expression in a {organism} {cell_type} cell.\nCell sentence:"
     ],
     "response": [
-        "{single_cell_sentence}."
+        "{cell_sentence}."
     ]
 }

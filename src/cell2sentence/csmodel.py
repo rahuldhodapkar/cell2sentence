@@ -8,10 +8,23 @@ Main model wrapper class definition
 
 from datasets import load_from_disk
 
-SUPPORTED_TASKS = [
-    "cell_type_classification",
-    "cell_type_generation",
-]
+from cell2sentence.prompt_formatter import PromptFormatter
+
+
+def tokenize_all(examples, tokenizer):
+    # Build list of full input prompts: model_input + response, separated by a space
+    full_inputs = []
+    num_samples = len(examples["model_input"])
+    for sample_idx in range(num_samples):
+        full_inputs.append(examples["model_input"][sample_idx] + " " + examples["response"][sample_idx])
+
+    # Tokenize full input prompts using LLM tokenizer -> will turn prompts into input indices for LLM
+    model_inputs = tokenizer(full_inputs)
+    for i in range(num_samples):
+        model_inputs["input_ids"][i] += [tokenizer.eos_token_id]
+        model_inputs["attention_mask"][i] += [tokenizer.eos_token_id]
+    model_inputs["labels"] = model_inputs["input_ids"]
+    return model_inputs
 
 
 class CSModel():
@@ -41,24 +54,30 @@ class CSModel():
                     alternatively, data can be any generator of sequential
                     text that satisfies the same functional contract as
                     a CSData object.
-            task: finetuning task (currently supported; cell_type_classification 
-                    and cell_type_generation)
+            task: name of finetuning task (see supported tasks in prompt_formatter.py)
             top_k_genes: number of genes to use for each cell sentence
         Return:
             None: an updated CSModel is generated in-place
         """
-        assert task in SUPPORTED_TASKS, "Specified finetuning task is not yet supported."
-
         # Load data from csdata object
         if csdata.data_path_format == "arrow":
             hf_ds_dict = load_from_disk(csdata.data_path)
         else:
             raise NotImplementedError("Please use arrow backend implementation for training")
         
-        # Define formatter to format prompts
-        prompt_formatter = PromptFormatter(task=task, top_k_genes=top_k_genes)
-        hf_ds_dict = prompt_formatter.format_prompts(hf_ds_dict)
+        # # Define prompt formatter, format prompts
+        # prompt_formatter = PromptFormatter(task=task, top_k_genes=top_k_genes)
+        # hf_ds_dict = prompt_formatter.format_prompts_for_dataset_dict(hf_ds_dict)
 
+        # Tokenize data using LLM tokenizer
+        # - this function applies a lambda function to tokenize each dataset split in the DatasetDict
+        # hf_ds_dict = hf_ds_dict.map(
+        #     lambda batch: tokenize_all(batch, tokenizer),
+        #     batched=True,
+        #     load_from_cache_file=False,
+        #     num_proc=3,
+        #     batch_size=1000,
+        # )
 
         # TODO/To think about:
         # There might be many ways for people to finetune, e.g. for generation or classification, etc.
