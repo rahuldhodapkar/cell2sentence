@@ -11,6 +11,7 @@ from scipy import sparse
 from tqdm import tqdm
 from sklearn.utils import shuffle
 from datasets import Dataset, DatasetDict
+import sys
 
 import numpy as np
 
@@ -101,7 +102,7 @@ def to_arrow_dataset(
 ):
     """
     Write data represented by CSData to an arrow dataset.
-    
+
     Arguments:
         output_path: save path where dataset should be written.
         cell_names: list of strings representing (unique) cell identifiers
