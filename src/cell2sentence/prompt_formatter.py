@@ -7,8 +7,9 @@ Prompt formatting class definition.
 #
 
 import json
+import random
 from pathlib import Path
-from datasets import DatasetDict
+from datasets import DatasetDict, Dataset
 
 HERE = Path(__file__).parent
 SUPPORTED_TASKS = [
@@ -43,7 +44,7 @@ class PromptFormatter():
     in cell2sentence based workflows.
     """
 
-    def __init__(self, task: str, top_k_genes: int):
+    def __init__(self, task: str, top_k_genes: int, random_seed: int = 42):
         """
         Core constructor: PromptFormatter loads prompts for the given task and
         handles prompt formatting given a cell sentence dataset.
@@ -52,6 +53,7 @@ class PromptFormatter():
         assert top_k_genes > 0, "'top_k_genes' must be an integer > 0"
         self.task = task
         self.top_k_genes = top_k_genes
+        random.seed(random_seed)
 
         self.prompts_dict = {}
         if task == "cell_type_prediction":
@@ -67,11 +69,11 @@ class PromptFormatter():
         model input and model output.
         """
         if self.task == "cell_type_prediction":
-            model_input_keys = ["num_genes", "organism", "cell_type"]
-            response_keys = ["cell_sentence"]
-        elif self.task == "cell_type_generation":
             model_input_keys = ["num_genes", "organism", "cell_sentence"]
             response_keys = ["cell_type"]
+        elif self.task == "cell_type_generation":
+            model_input_keys = ["num_genes", "organism", "cell_type"]
+            response_keys = ["cell_sentence"]
         
         return model_input_keys, response_keys
     
@@ -81,7 +83,7 @@ class PromptFormatter():
         """
         model_inputs_list = []
         responses_list = []
-        response_str = prompt_templates["response"][0]  # 1 response template
+        response_str = self.prompts_dict["response"][0]  # 1 response template
 
         # Get keys for model input and response which will need to be formatted
         model_input_keys, response_keys = self.get_keys_for_task()
@@ -96,9 +98,7 @@ class PromptFormatter():
             sample["num_genes"] = num_genes_str
 
             # Select an input prompt, format keys
-            model_input_str = random.choice(prompt_templates[MODEL_INPUT_KEY])
-            organism_label = sample["organism"]
-            cell_type_label = sample["cell_type"]
+            model_input_str = random.choice(self.prompts_dict["model_input"])
 
             # Format keys in model input
             for key in model_input_keys:
@@ -119,7 +119,7 @@ class PromptFormatter():
 
         # Create formatted Huggingface dataset
         ds_split_dict = {
-            "sample_type": self.task * len(hf_ds.num_rows),
+            "sample_type": [self.task] * hf_ds.num_rows,
             "model_input": model_inputs_list,
             "response": responses_list,
         }
