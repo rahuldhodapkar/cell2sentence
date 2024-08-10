@@ -6,6 +6,8 @@ Main model wrapper class definition
 # @authors: Rahul Dhodapkar, Syed Rizvi
 #
 
+from datasets import load_from_disk
+
 
 class CSModel():
     """
@@ -25,18 +27,31 @@ class CSModel():
         """
         return f"CSModel Object; Path={self.model_path}"
 
-    def fine_tune(self, data):
+    def fine_tune(self, csdata):
         """
         Fine tune a model using the provided CSData object data
 
         Arguments:
-            data: a CSData object to be used as input for finetuning.
-                  alternatively, data can be any generator of sequential
-                  text that satisfies the same functional contract as
-                  a CSData object.
+            csdata: a CSData object to be used as input for finetuning.
+                    alternatively, data can be any generator of sequential
+                    text that satisfies the same functional contract as
+                    a CSData object.
         Return:
             None: an updated CSModel is generated in-place
         """
+        if csdata.data_path_format == "arrow":
+            hf_ds_dict = load_from_disk(csdata.data_path)
+        else:
+            raise NotImplementedError("Please use arrow backend implementation for training")
+
+        # TODO/To think about:
+        # There might be many ways for people to finetune, e.g. for generation or classification, etc.
+        # They will want to finetune on their own dataset of interest.
+        # Need to come up with a way to specify what task they want to do. Probably good to imagine
+        #  this from the end users perspective first, how would a biologist want to use this to finetune
+        #  on their own data. Might be worth making a notebook that uses CSModel to train a model, and
+        #  think about abstract way biologist would want to specify their task and input/output columns
+
         return None
 
     def generate(self, n=100):

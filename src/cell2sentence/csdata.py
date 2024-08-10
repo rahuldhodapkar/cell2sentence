@@ -16,6 +16,7 @@ from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 from datasets import load_from_disk
 
+# TODO: later on, change import back to .utils import ...
 from cell2sentence.utils import generate_vocabulary, generate_sentences, to_arrow_dataset
 
 
@@ -25,7 +26,7 @@ class CSData():
     in cell2sentence based workflows.
     """
 
-    def __init__(self, vocab, feature_names, data_path, data_split_indices_dict, data_path_format='arrow'):
+    def __init__(self, vocab, feature_names, data_path, dataset_backend='arrow'):
         """
         Core constructor, CSData class contains a data path and format,
         and may also handle some buffering and data selection options.
@@ -33,36 +34,49 @@ class CSData():
         self.vocab = vocab  # Ordered Dictionary: {gene_name: num_expressed_cells}
         self.feature_names = feature_names  # list of gene names
         self.data_path = data_path  # path to data file in arrow format
-        self.data_split_indices_dict = data_split_indices_dict  # train, val, and test split indices
-        self.data_path_format = data_path_format  # support plaintext and arrow
+        self.dataset_backend = dataset_backend  # support plaintext and arrow
 
     @classmethod
     def from_adata(self, 
         adata, 
-        save_path: str, 
-        label_col_name: str = None, 
+        save_dir: str, 
+        save_name: str,
+        label_col_names: list = None, 
         random_state: int = 42, 
-        data_path_format: str = 'arrow',
-        delimiter: str = ' '
+        dataset_backend: str = 'arrow',
+        sentence_delimiter: str = ' '
     ):
         """
-        Create new CSData object from an anndata object
+        Create new CSData object from an anndata object.
+
+        Arguments:
+            adata: anndata.AnnData object to convert into a cell sentence dataset
+            save_dir: directory where cell sentence dataset will be saved to disk
+            save_name: name of folder to create storing cell sentence dataset (will be created)
+            label_col_names: list of column names in .obs to save into dataset along with cell sentences
+            random_state: random seed to control randomness
+            dataset_backend: backend implementation for cell sentence datase
+            sentence_delimiter: separator for cell sentence strings (default: ' ')
         """
-        assert data_path_format in ['arrow'], "Unknown data path format."  # TODO: add support for plaintext
+        assert dataset_backend in ['arrow'], "C2S currently only supports arrow backend."
         
         # Create save directory
+        save_path = os.path.join(save_dir, save_name)
         if not os.path.exists(save_path):
             os.makedirs(save_path, exist_ok=True)
         
-        # Check that var_names contains gene names, not ensembl IDs.
+        # Warn if var_names contains ensembl IDs instead of gene names.
         first_gene_name = str(adata.var_names[0])
         if "ENS" in first_gene_name:
-            print("WARN: adata.var_names seems to contain ensembl IDs rather than gene/feature names. It is highly recommended to use gene names in cell sentences.")
+            print(
+                """WARN: adata.var_names seems to contain ensembl IDs rather than gene/feature names. 
+                It is highly recommended to use gene names in cell sentences."""
+            )
 
         # Create vocabulary and cell sentences based on adata object
         vocabulary = generate_vocabulary(adata)
         feature_names = list(vocabulary.keys())
-        sentences = generate_sentences(adata, vocabulary, delimiter=delimiter)
+        sentences = generate_sentences(adata, vocabulary, delimiter=sentence_delimiter)
         cell_names = adata.obs_names.tolist()
 
         # Train/val/test split here
@@ -76,13 +90,14 @@ class CSData():
         data_split_indices_dict = { "train": train_indices, "val": val_indices, "test": test_indices }
         
         # Save to disk
-        if data_path_format == "arrow":
+        if dataset_backend == "arrow":
             to_arrow_dataset(
                 output_path=save_path, 
                 cell_names=cell_names, 
                 sentences=sentences,
                 data_split_indices_dict=data_split_indices_dict,
-                label_col_name=label_col_name
+                adata=adata,
+                label_col_names=label_col_names
             )
         else:
             raise NotImplementedError("to_plain_text() function not yet implemented, please use arrow save format.")
@@ -91,11 +106,13 @@ class CSData():
             vocab=vocabulary,
             feature_names=feature_names,
             data_path=save_path,
-            data_split_indices_dict=data_split_indices_dict,
-            data_path_format='arrow',
+            dataset_backend='arrow',
         )
 
     def get_sentence_strings(self):
+        """
+        Helper function
+        """
         ds_dict = load_from_disk(self.data_path)
         return {
             "train": ds_dict["train"]["cell_sentence"],
@@ -116,7 +133,7 @@ class CSData():
         """
         Summarize CSData object as string for debugging and logging.
         """
-        return f"CSData Object; Path={self.data_path}, Format={self.data_path_format}"
+        return f"CSData Object; Path={self.data_path}, Format={self.dataset_backend}"
 
 
 # Debugging

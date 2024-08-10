@@ -91,19 +91,33 @@ def generate_sentences(adata, vocab, delimiter=' ', random_state=42):
 
     return sentences
 
-def to_arrow_dataset(output_path, cell_names, sentences, data_split_indices_dict, label_col_name):
+def to_arrow_dataset(
+    output_path: str, 
+    cell_names: list, 
+    sentences: list, 
+    data_split_indices_dict: dict, 
+    adata, 
+    label_col_names: list
+):
     """
     Write data represented by CSData to an arrow dataset.
+    
     Arguments:
-        output_path: a string representing the path to which the output file
-                        should be written.
+        output_path: save path where dataset should be written.
+        cell_names: list of strings representing (unique) cell identifiers
+        sentences: list of strings representing cell sentences
+        data_split_indices_dict: dictionary of indices for train, val, and test sets
+        adata: anndata.AnnData object
+        label_col_names: list of column names in .obs DataFrame to save into dataset
+                                along with cell sentences
     """
     data_dict = {
         "cell_name": cell_names,
         "cell_sentence": sentences,
     }
-    if label_col_name is not None:
-        data_dict[label_col_name] = adata.obs[label_col_name].tolist()
+    if label_col_names is not None:
+        for label_col in label_col_names:
+            data_dict[label_col] = adata.obs[label_col].tolist()
 
     full_ds = Dataset.from_dict(data_dict)
 
