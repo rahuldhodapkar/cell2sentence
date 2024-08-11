@@ -6,7 +6,9 @@ Main model wrapper class definition
 # @authors: Rahul Dhodapkar, Syed Rizvi
 #
 
+import os
 from datasets import load_from_disk
+from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments
 
 from cell2sentence.prompt_formatter import PromptFormatter
 
@@ -33,11 +35,26 @@ class CSModel():
     in cell2sentence based workflows.
     """
 
-    def __init__(self, model_path):
+    def __init__(self, model_path_or_path, save_dir, save_name):
         """
         Core constructor, CSModel class contains a path to a model.
+
+        Arguments:
+            model_path_or_path: either a string representing a Huggingface model if 
+                want to start with a default LLM, or a path to an already-trained C2S
+                model on disk if want to do inference with/finetune starting from
+                an already-trained C2S model.
+            save_dir: directory where model should be saved to
+            save_name: name to save model under (no file extension needed)
         """
-        self.model_path = model_path  # path to model to load
+        self.model_path_or_path = model_path_or_path  # path to model to load
+
+        # Create save path
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+        
+        save_path = os.path.join(save_dir, save_name)
+        self.save_path = save_path
 
     def __str__(self):
         """
@@ -66,18 +83,18 @@ class CSModel():
             raise NotImplementedError("Please use arrow backend implementation for training")
         
         # # Define prompt formatter, format prompts
-        # prompt_formatter = PromptFormatter(task=task, top_k_genes=top_k_genes)
-        # hf_ds_dict = prompt_formatter.format_prompts_for_dataset_dict(hf_ds_dict)
+        prompt_formatter = PromptFormatter(task=task, top_k_genes=top_k_genes)
+        formatted_hf_ds_dict = prompt_formatter.format_prompts_for_dataset_dict(hf_ds_dict)
 
         # Tokenize data using LLM tokenizer
         # - this function applies a lambda function to tokenize each dataset split in the DatasetDict
-        # hf_ds_dict = hf_ds_dict.map(
-        #     lambda batch: tokenize_all(batch, tokenizer),
-        #     batched=True,
-        #     load_from_cache_file=False,
-        #     num_proc=3,
-        #     batch_size=1000,
-        # )
+        hf_ds_dict = hf_ds_dict.map(
+            lambda batch: tokenize_all(batch, tokenizer),
+            batched=True,
+            load_from_cache_file=False,
+            num_proc=3,
+            batch_size=1000,
+        )
 
         # TODO/To think about:
         # There might be many ways for people to finetune, e.g. for generation or classification, etc.
@@ -111,3 +128,36 @@ class CSModel():
             Text corresponding to the number `n` of tokens requested
         """
         return None
+
+
+# Debugging
+if __name__ == "__main__":
+    from pathlib import Path
+
+    HERE = Path(__file__).parent
+
+    # Read in immune tissue data
+    adata = sc.read_h5ad(HERE / 'immune_tissue_10cells.h5ad')
+    save_dir = "/home/sr2464/palmer_scratch/C2S_Files_Syed/c2s_api_testing"
+    save_name = "immune_tissue_10cells_csdata_arrow"
+    
+    # Define columns of adata.obs which we want to keep in cell sentence dataset
+    adata_obs_cols_to_keep = ["cell_type", "tissue", "batch_condition", "organism"]
+    
+    # Create CSData object
+    csdata = cs.CSData.from_adata(
+        adata, 
+        save_dir=save_dir,
+        save_name=save_name,
+        dataset_backend="arrow",
+        sentence_delimiter=" ",
+        label_col_names=adata_obs_cols_to_keep
+    )
+
+    # Define CSModel object
+    csmodel = CSModel(
+        model_path_or_path="EleutherAI/pythia-410m",
+        save_dir="/home/sr2464/palmer_scratch/C2S_Files_Syed/c2s_api_testing/csmodel_testing",
+        save_name="training_run_1_chkpt"
+    )
+    
