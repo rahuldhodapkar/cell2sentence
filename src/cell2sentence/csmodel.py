@@ -8,12 +8,15 @@ Main model wrapper class definition
 
 # Python built-in libraries
 import os
+from random import choice
 from datetime import datetime
 
 # Third-party libraries
 from datasets import load_from_disk
+from tqdm import tqdm
 
 # Pytorch, Huggingface imports
+import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments
 
 # Local imports
@@ -56,31 +59,32 @@ class CSModel():
         """
         self.model_path_or_path = model_path_or_path  # path to model to load
         self.save_dir = save_dir
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        print("Using device:", self.device)
 
         # Create save path
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
-        
-        save_path = os.path.join(save_dir, save_name)
-        self.save_path = save_path
+        self.save_path = os.path.join(save_dir, save_name)
 
-        # Load model, save to disk
+        # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_path_or_path
         )
 
+        # Load model - either a pretrained C2S model path, or a Huggingface LLM name (if want to train from scratch on your own dataset)
         model = AutoModelForCausalLM.from_pretrained(
             model_path_or_path,
-            cache_dir=os.path.join(save_dir, ".cache"),
+            cache_dir=os.path.join(save_dir, ".cache"),  # model file takes up several GB if loading default Huggignface LLM models
             trust_remote_code=True
         )
-        model.save_checkpoint(self.save_path)  # TODO: check this
+        model.save_pretrained(self.save_path)  # TODO: check this
 
     def __str__(self):
         """
         Summarize CSData object as string for debugging and logging.
         """
-        return f"CSModel Object; Path={self.model_path}"
+        return f"CSModel Object; Path={self.save_path}"
 
     def fine_tune(self, csdata, task: str, top_k_genes: int = 100):
         """
@@ -102,7 +106,7 @@ class CSModel():
         else:
             raise NotImplementedError("Please use arrow backend implementation for training")
         
-        # # Define prompt formatter, format prompts
+        # Define prompt formatter, format prompts
         prompt_formatter = PromptFormatter(task=task, top_k_genes=top_k_genes)
         formatted_hf_ds_dict = prompt_formatter.format_prompts_for_dataset_dict(hf_ds_dict)
 
@@ -238,15 +242,73 @@ class CSModel():
     def cell_type_prediction_inference(self):
         pass
 
+    def generate_cells_conditioned_on_cell_type(self, cell_types_list: list, n_genes: int = 200, organism: str = "Homo sapiens"):
+        """
+        Generate a new cell using the model, conditioned on cell type
+
+        Arguments:
+            cell_type_str: list of strings representing the cell type labels to generate from.
+            n_genes: the number of genes to prompt the model to generate for the cell sentence.
+        
+        Returns:
+            List of generated cells in the form of cell sentences
+        """
+        assert organism in ["Homo sapiens", "Mus musculus"], "Please specify 'Homo sapiens' or 'Mus musculus' as organism."
+        prompt_formatter = PromptFormatter(task="cell_type_generation", top_k_genes=n_genes)
+
+        print("Reloading model from path on disk:", self.save_path)
+        model = AutoModelForCausalLM.from_pretrained(
+            self.save_path,
+            cache_dir=os.path.join(self.save_dir, ".cache"),
+            trust_remote_code=True
+        )
+        model = model.to(self.device)
+
+        print(f"Generating {len(cell_types_list)} cells using CSModel...")
+        generated_cells = []
+        for cell_type_str in tqdm(cell_types_list):
+            # Prepare inputs
+            model_input_prompt_str = choice(prompt_formatter.prompts_dict["model_input"])  # randomly select 1 input template
+            model_input_prompt_str = model_input_prompt_str.format(
+                num_genes=n_genes,
+                organism=organism,
+                cell_type=cell_type_str,
+            )
+            tokens = self.tokenizer([model_input_prompt_str], padding=True, return_tensors='pt')
+            input_ids = tokens['input_ids'].to(self.device)
+            attention_mask = tokens['attention_mask'].to(self.device)
+
+            # Forward pass
+            max_n_tokens = n_genes * 4  # roughly estimate 4 tokens per gene
+            outputs = model.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                do_sample=True,
+                max_new_tokens=max_n_tokens,
+                top_k=50,
+                top_p=0.95,
+                pad_token_id=self.tokenizer.eos_token_id,
+                output_hidden_states=False  # True
+                # no_repeat_ngram_size=3
+            )
+            pred = self.tokenizer.decode(outputs[0])
+            pred = pred.replace(model_input_prompt_str, "")  # remove input from model output string
+            pred = pred.lstrip()  # remove any leading whitespace, if any
+            generated_cells.append(pred)
+        
+        return generated_cells
+
 
 # Debugging
 if __name__ == "__main__":
     from pathlib import Path
+    import scanpy as sc
+    import cell2sentence as cs
 
     HERE = Path(__file__).parent
 
     # Read in immune tissue data
-    adata = sc.read_h5ad(HERE / 'immune_tissue_10cells.h5ad')
+    adata = sc.read_h5ad(HERE / 'tests/immune_tissue_10cells.h5ad')
     save_dir = "/home/sr2464/palmer_scratch/C2S_Files_Syed/c2s_api_testing"
     save_name = "immune_tissue_10cells_csdata_arrow"
     
@@ -264,12 +326,24 @@ if __name__ == "__main__":
     )
 
     # Define CSModel object
-    cell_type_pred_model_path = "/home/sr2464/palmer_scratch/C2S_Files_Syed/multicell_pretraining_v2_important_models/pythia-410m-multicell_v2_2024-07-28_13-55-51_checkpoint-7600_cell_type_pred"
+    # cell_type_pred_model_path = "/home/sr2464/palmer_scratch/C2S_Files_Syed/multicell_pretraining_v2_important_models/pythia-410m-multicell_v2_2024-07-28_13-55-51_checkpoint-7600_cell_type_pred"
+    # save_name = "cell_type_pred_pythia_410M_1"
+    cell_type_cond_generation_model_path = "/home/sr2464/palmer_scratch/C2S_Files_Syed/multicell_pretraining_v2_important_models/pythia-410m-multicell_v2_2024-07-28_14-10-44_checkpoint-7000_cell_type_cond_generation"
+    save_name = "cell_type_cond_generation_pythia_410M_1"
     csmodel = CSModel(
-        model_path_or_path=cell_type_pred_model_path,
+        model_path_or_path=cell_type_cond_generation_model_path,
         save_dir="/home/sr2464/palmer_scratch/C2S_Files_Syed/c2s_api_testing/csmodel_testing",
-        save_name="cell_type_pred_pythia_410M_1"
+        save_name=save_name
     )
+
+    # Generate new cells
+    cell_types_list = ["neuron", "neuron", "memory T-cell", "IgA plasma cell", "CD8-positive, alpha-beta T cell"]
+    generated_cell_sentences = csmodel.generate_cells_conditioned_on_cell_type(
+        cell_types_list=cell_types_list,
+        n_genes=200,
+        organism="Homo sapiens"
+    )
+    print(f"Finished generating {len(cell_types_list)} cells/")
 
     #--- Start training from a Pythia-410M model ---#
     # # Define CSModel object
