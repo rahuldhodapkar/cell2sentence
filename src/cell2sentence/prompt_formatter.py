@@ -6,9 +6,12 @@ Prompt formatting class definition.
 # @authors: Syed Rizvi
 #
 
+# Python built-in libraries
 import json
 import random
 from pathlib import Path
+
+# Third-party libraries
 from datasets import DatasetDict, Dataset
 
 HERE = Path(__file__).parent

@@ -6,16 +6,19 @@ Main data wrapper class definition
 # @authors: Rahul Dhodapkar, Syed Rizvi
 #
 
+# Python built-in libraries
 import os
 
+# Third-party libraries
 import numpy as np
 import pandas as pd
 from scipy import sparse
-from tqdm import tqdm
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 from datasets import load_from_disk
+from tqdm import tqdm
 
+# Local imports
 # TODO: later on, change import back to .utils import ...
 from cell2sentence.utils import generate_vocabulary, generate_sentences, to_arrow_dataset
 

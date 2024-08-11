@@ -6,10 +6,16 @@ Main model wrapper class definition
 # @authors: Rahul Dhodapkar, Syed Rizvi
 #
 
+# Python built-in libraries
 import os
+
+# Third-party libraries
 from datasets import load_from_disk
+
+# Pytorch, Huggingface imports
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments
 
+# Local imports
 from cell2sentence.prompt_formatter import PromptFormatter
 
 

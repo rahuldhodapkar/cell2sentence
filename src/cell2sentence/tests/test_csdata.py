@@ -3,17 +3,21 @@
 # Test data loading and anndata object processing
 #
 
+# Python built-in libraries
+import os
+import math
+import random
+from pathlib import Path
+
+# Third-party libraries
+import pytest
+import numpy as np
 import anndata as ad
 import scanpy as sc
-from pathlib import Path
 from datasets import load_from_disk, DatasetDict
-import cell2sentence as cs
-import numpy as np
-import random
-import math
-import os
 
-import pytest
+# Local imports
+import cell2sentence as cs
 
 HERE = Path(__file__).parent
 

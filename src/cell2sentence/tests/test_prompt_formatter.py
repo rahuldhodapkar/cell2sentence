@@ -3,14 +3,18 @@
 # Test prompt formatting
 #
 
+# Python built-in libraries
+import json
+from pathlib import Path
+
+# Third-party libraries
+import pytest
+import scanpy as sc
+from datasets import DatasetDict, load_from_disk
+
+# Local imports
 import cell2sentence as cs
 from cell2sentence.prompt_formatter import PromptFormatter
-from pathlib import Path
-from datasets import DatasetDict, load_from_disk
-import scanpy as sc
-import json
-
-import pytest
 
 HERE = Path(__file__).parent
 
