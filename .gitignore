@@ -1,8 +1,13 @@
 # artifacts
 .DS_Store
+cache
 
 # project specific excludes
 data
+tutorialdata
+calc
+figures
+
 
 ###########################################################
 ## BEGIN PYTHON BOILERPLATE GITIGNORE
